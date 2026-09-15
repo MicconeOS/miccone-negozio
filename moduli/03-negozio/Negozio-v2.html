@@ -108,8 +108,14 @@ async function init(){
     const test=IN_PROVA?[{id:'00000000-0000-4000-a000-000000000002',name:'🧪 Palestra Duomo',slug:'palestra-duomo'},
                         {id:'00000000-0000-4000-a000-000000000001',name:'🧪 Palestra Borgo',slug:'palestra-borgo'}]:[];
     STORES=[...reali,...test];
+    // link diretto per negozio: ?sede=borgo oppure ?sede=duomo (l'iPad di ogni negozio usa il suo)
+    const sedeParam=(new URLSearchParams(location.search).get('sede')||'').toLowerCase();
+    const slugFisso={borgo:'borgo-ticino',duomo:'piazza-duomo'}[sedeParam]||sedeParam;
+    const fisso=STORES.find(s=>s.slug===slugFisso);
+    if(fisso){S.store=fisso;S.sedeFissa=true;}
     const ses=leggiSessione();
-    if(ses){S.emp=ses.emp;if(ses.store)S.store=ses.store;S.pin=ses.pin||'';S._rip={data:ses.data,momento:ses.momento};return entra();}
+    if(ses&&(!fisso||(ses.store&&ses.store.id===fisso.id))){S.emp=ses.emp;if(ses.store)S.store=ses.store;S.pin=ses.pin||'';S._rip={data:ses.data,momento:ses.momento};return entra();}
+    if(fisso)return schermataLogin();
     schermataStore();
   }catch(e){app().innerHTML=`<div class="loading">Niente rete. Riprova tra poco.</div>`;}
 }
@@ -126,7 +132,7 @@ async function schermataLogin(){
     <img class="badge" src="../../shared/logo-tondo.png" onerror="this.style.display='none'">
     <h1>Ciao! Chi sei?</h1><div class="sub">${S.store.name.replace('🧪 ','')} · tocca il tuo nome</div>
     <div class="people">${emps.map(e=>`<button onclick='pickPerson(${JSON.stringify(e).replace(/'/g,"&#39;")})'>${e.name}<small>${e.role==='admin'?'responsabile':'in servizio'}</small></button>`).join('')||'<div class="sub">Nessun dipendente. Beppe li aggiunge da Madia.</div>'}</div>
-    <button onclick="schermataStore()" style="margin-top:18px;background:none;border:none;color:#D9C2AE;font-size:18px">← cambia negozio</button></div>`;
+    ${S.sedeFissa?'':'<button onclick="schermataStore()" style="margin-top:18px;background:none;border:none;color:#D9C2AE;font-size:18px">← cambia negozio</button>'}</div>`;
 }
 // Primo ingresso senza PIN: il dipendente lo sceglie (4-6 cifre, ripetuto) e da lì in poi serve sempre.
 async function pickPerson(e){
@@ -146,7 +152,7 @@ function schermataPin(){
     <button onclick="schermataLogin()" style="margin-top:20px;background:none;border:none;color:#D9C2AE;font-size:18px">← indietro</button></div>`;
   disegnaDots();
 }
-function disegnaDots(){document.getElementById('dots').innerHTML=[0,1,2,3].map(i=>`<i class="${i<S.pin.length?'on':''}"></i>`).join('');}
+function disegnaDots(){const n=Math.max(4,Math.min(6,S.pin.length));document.getElementById('dots').innerHTML=Array.from({length:n},(_,i)=>`<i class="${i<S.pin.length?'on':''}"></i>`).join('');}
 async function tasto(t){
   if(t==='c'){S.pin='';disegnaDots();return;}
   if(t==='ok'){return S.modoPin==='nuovo'?confermaNuovoPin():verificaPin();}
