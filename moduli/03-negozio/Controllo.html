@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Negozio · controllo — Madia</title>
+<link rel="stylesheet" href="../../shared/madia.css">
+<style>
+.apri{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 16px;}
+.apri a{flex:1;min-width:220px;display:block;background:var(--caffe);color:#FBF6EA;text-decoration:none;border-radius:14px;padding:16px 18px;font-weight:700;font-size:17px;}
+.apri a.secondo{background:var(--panna);color:var(--caffe);border:1px solid var(--sabbia);}
+.apri a small{display:block;font-weight:400;font-size:13px;opacity:.85;margin-top:3px;}
+.sede{background:var(--panna);border:1px solid var(--sabbia);border-radius:14px;padding:14px 16px;margin-bottom:12px;}
+.sede h3{margin:0 0 4px;color:var(--caffe);font-size:19px;}
+.barra{height:12px;background:var(--sabbia);border-radius:7px;overflow:hidden;margin-top:8px;}
+.barra i{display:block;height:100%;background:var(--campagna);}
+.barra.magra i{background:var(--rosso);}
+.cats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;}
+.cat{background:#fff;border-radius:10px;padding:8px 10px;font-size:13px;}
+.cat b{display:block;font-size:16px;color:var(--caffe);}
+.cat .mini{height:6px;background:var(--sabbia);border-radius:4px;overflow:hidden;margin-top:5px;}
+.cat .mini i{display:block;height:100%;background:var(--campagna);}
+.dip{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.dip span{background:#fff;border:1px solid var(--sabbia);border-radius:20px;padding:6px 12px;font-size:14px;}
+.dip span b{color:var(--caffe);}
+.dip span small{color:var(--grigio);}
+.manca{margin-top:12px;font-size:13.5px;color:#7a3f2a;}
+.manca details summary{cursor:pointer;font-weight:700;color:var(--caffe);}
+.manca ul{margin:6px 0 0 18px;padding:0;columns:2;}
+.manca li{margin:2px 0;}
+.riga-g{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:15px;padding:7px 0;border-top:1px dashed var(--sabbia);}
+.riga-g .g{min-width:56px;font-weight:700;}
+.riga-g .n{min-width:70px;}
+.riga-g .chi{font-size:13px;color:var(--grigio);flex:1;text-align:right;}
+.allarme{background:#fbe7e3;border:1px solid #e9b8ae;border-radius:12px;padding:10px 14px;margin-bottom:12px;color:#8a3226;font-size:14px;}
+.allarme b{display:block;font-size:15px;margin-bottom:4px;}
+.vuoto{color:var(--grigio);font-size:14px;}
+@media (max-width:640px){.cats{grid-template-columns:repeat(2,1fr);}.manca ul{columns:1;}}
+</style>
+</head>
+<body class="madia">
+<header class="m-hdr"><img src="../../shared/logo-tondo.png" alt="Miccone"><div>
+  <h1>Negozio</h1><div class="m-sot">Madia · dashboard dell'amministratore: chi ha fatto cosa, negozio per negozio</div>
+</div></header>
+<nav class="m-tabs">
+  <a href="Controllo.html" class="on">Controllo</a>
+  <a href="Negozio-v2.html">App dipendenti</a>
+  <a href="Cassa.html">Cassa contanti</a>
+</nav>
+
+<div class="m-wrap">
+  <div class="apri">
+    <a href="Negozio-v2.html">📱 Apri l'app dei dipendenti<small>Da installare sull'iPad di ogni punto vendita. Entrano col nome (o PIN).</small></a>
+    <a class="secondo" href="Negozio-v2.html">🗓️ Vedi tutta la settimana<small>Entra come admin (Giulio / Amministrazione): compare la barra dei giorni.</small></a>
+  </div>
+  <div class="m-kpi" id="kpi"></div>
+  <div id="allarmi"></div>
+  <div id="sedi"></div>
+  <div class="m-nota">
+    <b>Come funziona.</b> I dipendenti usano l'iPad del punto vendita: scelgono il negozio, entrano col nome (o col PIN) e spuntano
+    le attività di mattina, pomeriggio e sera: procedure, produzione, HACCP e pulizie. Le temperature sopra i 6° avvisano il dipendente,
+    sopra gli 8° arriva una mail all'amministratore. Qui vedi in tempo reale chi ha fatto cosa, per negozio e per dipendente.
+    Le attività si cambiano da Madia, non dall'app.
+  </div>
+</div>
+
+<script>
+const SB = "https://cdyfdwwfbfitfjazxses.supabase.co";
+const KEY = "sb_publishable_SgdIMeJOXfRP9P3ndw0S7Q_4JFoJ2oq";
+async function rpc(n, a) {
+  const r = await fetch(`${SB}/rest/v1/rpc/${n}`, {method:'POST',
+    headers:{'Content-Type':'application/json', apikey:KEY, Authorization:'Bearer '+KEY}, body:JSON.stringify(a||{})});
+  return r.json();
+}
+const dIT = d => d.split('-').reverse().slice(0,2).join('/');
+const oraIT = ts => ts ? new Date(ts).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '';
+// note e nomi arrivano dai dipendenti: mostrati come testo, mai come codice
+const sicuro = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pct = (f,p) => p ? Math.round(f/p*100) : 0;
+const CATS = [['procedure','Procedure'],['produzione','Produzione'],['haccp','HACCP'],['pulizie','Pulizie']];
+
+(async function(){
+  const R = await rpc('cassa_report_dipendenti', {});
+  const giorni = R.giorni || [], dip = R.dipendenti || [], mancanti = R.mancanti_oggi || [], allarmi = R.allarmi || [];
+  const oggi = new Date().toLocaleDateString('en-CA');
+  const diOggi = giorni.filter(r => r.giorno === oggi);
+  const tot = giorni.reduce((s,r) => s + r.previste, 0), fat = giorni.reduce((s,r) => s + r.fatte, 0);
+
+  document.getElementById('kpi').innerHTML = `
+    <div><b>${pct(fat,tot)}%</b><span>completate negli ultimi 7 giorni</span></div>
+    <div><b>${fat}</b><span>attività spuntate</span></div>
+    <div><b>${diOggi.reduce((s,r)=>s+r.previste-r.fatte,0)}</b><span>ancora da fare oggi</span></div>
+    <div><b>${allarmi.length}</b><span>allarmi frigo (&gt;8°) in 7 giorni</span></div>`;
+
+  document.getElementById('allarmi').innerHTML = allarmi.length ? `<div class="allarme"><b>⚠️ Frigo sopra gli 8°</b>${
+    allarmi.map(a => `${dIT(a.giorno)} · ${sicuro(a.sede)} · <b style="display:inline">${sicuro(a.cosa)}</b> a ${a.valore}° (${sicuro(a.chi||'—')})`).join('<br>')}</div>` : '';
+
+  const sedi = [...new Set(giorni.map(r => r.sede))];
+  document.getElementById('sedi').innerHTML = sedi.map(sede => {
+    const righe = giorni.filter(r => r.sede === sede);
+    const o = righe.find(r => r.giorno === oggi) || {previste:0,fatte:0};
+    const p = pct(o.fatte, o.previste);
+    const dipOggi = dip.filter(d => d.sede === sede && d.giorno === oggi);
+    const mancaOggi = mancanti.filter(m => m.sede === sede);
+    const chiGiorno = g => dip.filter(d => d.sede === sede && d.giorno === g).map(d => `${sicuro(d.dipendente||'—')} ${d.fatte}`).join(' · ');
+    return `<h2>${sicuro(sede)}</h2>
+      <div class="sede">
+        <h3>Oggi: ${o.fatte} su ${o.previste} <span style="font-weight:400;font-size:14px;color:var(--grigio)">(${p}%)</span></h3>
+        <div class="barra ${p<50?'magra':''}"><i style="width:${p}%"></i></div>
+        <div class="cats">${CATS.map(([k,l]) => `<div class="cat">${l}<b>${o[k]||0}/${o[k+'_p']||0}</b><div class="mini"><i style="width:${pct(o[k]||0,o[k+'_p']||0)}%"></i></div></div>`).join('')}</div>
+        <div class="dip">${dipOggi.length ? dipOggi.map(d => `<span><b>${sicuro(d.dipendente||'—')}</b> ${d.fatte} fatte <small>· ${oraIT(d.ultima)}</small></span>`).join('')
+          : '<span class="vuoto">Oggi nessuno ha ancora spuntato.</span>'}</div>
+        ${mancaOggi.length ? `<div class="manca"><details><summary>Manca ancora oggi: ${mancaOggi.length}</summary><ul>${
+          mancaOggi.map(m => `<li>${m.momento} · ${sicuro(m.cosa)}</li>`).join('')}</ul></details></div>` : (o.previste ? '<div class="manca">✅ Giornata completa.</div>' : '')}
+        ${righe.filter(r => r.giorno !== oggi).map(r => `<div class="riga-g"><span class="g">${dIT(r.giorno)}</span>
+            <span class="n">${r.fatte}/${r.previste} ${r.fatte===r.previste&&r.previste>0?'✅':(r.fatte===0?'—':'⚠️')}</span>
+            <span class="chi">${chiGiorno(r.giorno) || 'nessuna spunta'}</span></div>`).join('')}
+      </div>`;
+  }).join('') || '<div class="vuoto">Nessun dato: le sedi non hanno attività attive.</div>';
+})();
+</script>
+</body>
+</html>

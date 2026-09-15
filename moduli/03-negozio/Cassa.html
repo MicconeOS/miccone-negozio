@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cassa · contanti — Madia</title>
+<link rel="icon" href="../../shared/logo-tondo.png">
+<style>
+@font-face{font-family:'Miso';src:url('../../shared/fonts/Miso-Regular.woff2') format('woff2');font-weight:400;}
+@font-face{font-family:'Miso';src:url('../../shared/fonts/Miso-Bold.woff2') format('woff2');font-weight:700;}
+:root{
+  /* pelle Madia (21/8/2026): stessi colori delle altre pagine del sistema */
+  --cream:#F4EEDF;
+  --cream-2:#E6DACA;
+  --paper:#FBF7F0;
+  --brown:#3E2A1E;
+  --brown-2:#7B4D35;
+  --brown-3:#C98A3C;
+  --ink:#2B2723;
+  --muted:#8a7d6e;
+  --line:#E6DACA;
+  --green:#6F7A45;
+  --green-bg:#e7efdb;
+  --red:#D63A2B;
+  --red-bg:#F7E6E0;
+  --amber:#9C6B1F;
+  --amber-bg:#F6EDD9;
+  --radius:16px;
+  --shadow:0 2px 12px rgba(92,67,39,.08), 0 1px 3px rgba(92,67,39,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Miso','Inter',system-ui,sans-serif;
+  background:var(--cream);
+  color:var(--ink);
+  min-height:100vh;
+  background-image:radial-gradient(circle at 15% 10%, rgba(139,107,69,.05), transparent 40%),
+                   radial-gradient(circle at 85% 90%, rgba(139,107,69,.05), transparent 40%);
+}
+h1,h2,h3,.serif{font-family:'Miso',Georgia,sans-serif}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit;font-size:16px}
+
+/* ---------- Layout ---------- */
+.wrap{max-width:560px;margin:0 auto;padding:0 16px 90px}
+.wrap.wide{max-width:1080px}
+/* testata Madia (Vestito A): banda caffe' a tutta pagina col logo tondo, come Negozio.html */
+header.topbar{
+  margin:0 calc(50% - 50vw) 18px;
+  background:var(--brown);color:#fff;
+  display:flex;align-items:center;gap:12px;
+  padding:14px 18px;padding-top:max(14px, env(safe-area-inset-top));
+}
+.topbar img.logo{width:46px;height:46px;border-radius:50%;background:#fff;display:block;flex:none}
+.topbar .tit h1{font-size:22px;font-weight:700;color:#fff;line-height:1.1}
+.topbar .tit .sot{font-size:12.5px;color:#cbbba9}
+.topbar .who{margin-left:auto;font-size:12.5px;color:#cbbba9;text-align:right;line-height:1.35}
+.topbar .who b{color:#fff;font-weight:600}
+.topbar .who a{color:#cbbba9}
+
+.card{
+  background:var(--paper);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:18px;margin-bottom:14px;
+}
+.card h2{font-size:21px;color:var(--brown);margin-bottom:4px;font-weight:600}
+.card .sub{font-size:13.5px;color:var(--muted);margin-bottom:14px}
+
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:15px 18px;border-radius:14px;
+  font-size:16px;font-weight:600;transition:transform .06s ease, box-shadow .2s;
+}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--brown-2);color:#FFF8EC;box-shadow:0 3px 10px rgba(92,67,39,.25)}
+.btn-primary:disabled{background:#C7B8A2;box-shadow:none;cursor:not-allowed}
+.btn-ghost{background:transparent;color:var(--brown-2);border:1.5px solid var(--brown-3)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-row{display:flex;gap:10px}
+.btn-row .btn{flex:1}
+
+.back{
+  display:inline-flex;align-items:center;gap:6px;color:var(--brown-2);
+  font-size:14px;font-weight:600;padding:6px 2px;margin-bottom:8px;
+}
+
+/* ---------- Menu tiles ---------- */
+.tile{
+  display:flex;align-items:center;gap:14px;width:100%;text-align:left;
+  background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:18px;margin-bottom:12px;
+  transition:transform .06s ease;
+}
+.tile:active{transform:scale(.985)}
+.tile .ico{
+  width:48px;height:48px;border-radius:13px;flex:none;
+  display:flex;align-items:center;justify-content:center;font-size:23px;
+  background:var(--cream-2);
+}
+.tile .t{font-family:'Miso',sans-serif;font-size:18px;font-weight:600;color:var(--brown)}
+.tile .d{font-size:13px;color:var(--muted);margin-top:2px}
+.tile .chip{margin-left:auto;flex:none}
+
+.chip{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:12px;font-weight:600;padding:5px 10px;border-radius:99px;
+}
+.chip.ok{background:var(--green-bg);color:var(--green)}
+.chip.bad{background:var(--red-bg);color:var(--red)}
+.chip.warn{background:var(--amber-bg);color:var(--amber)}
+.chip.todo{background:var(--cream-2);color:var(--muted)}
+
+/* ---------- PIN pad ---------- */
+.pin-dots{display:flex;justify-content:center;gap:14px;margin:18px 0}
+.pin-dots span{width:14px;height:14px;border-radius:50%;border:2px solid var(--brown-3);transition:background .12s}
+.pin-dots span.full{background:var(--brown-2);border-color:var(--brown-2)}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:290px;margin:0 auto}
+.pad button{
+  height:62px;border-radius:14px;font-size:23px;font-weight:600;color:var(--brown);
+  background:var(--paper);border:1px solid var(--line);box-shadow:var(--shadow);
+  font-family:'Miso',sans-serif;
+}
+.pad button:active{background:var(--cream-2)}
+.pad button.fn{font-size:15px;font-family:'Miso',sans-serif;color:var(--muted)}
+
+/* ---------- Denomination counter ---------- */
+.den-group{margin-bottom:6px}
+.den-group h3{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:14px 0 8px;font-family:'Miso',sans-serif;font-weight:700}
+.den{
+  display:flex;align-items:center;gap:10px;padding:9px 0;
+  border-bottom:1px dashed var(--line);
+}
+.den:last-child{border-bottom:none}
+.den .face{
+  flex:none;width:64px;height:38px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Miso',sans-serif;font-weight:700;font-size:15px;
+}
+.den .face.coin{width:42px;height:42px;border-radius:50%;margin:0 11px;
+  background:radial-gradient(circle at 35% 30%,#F3E3C0,#D9BC85 70%,#BE9C60);
+  border:2px solid #C4A468;color:#6B5326;font-size:12.5px}
+.den .face.coin.copper{background:radial-gradient(circle at 35% 30%,#EBC5A8,#C98F5F 70%,#A96F42);border-color:#B27C4E;color:#5F3B1E}
+.den .face.note{color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.12)}
+.den .qty-wrap{margin-left:auto;display:flex;align-items:center;gap:8px}
+.den .stepper{
+  width:40px;height:40px;border-radius:11px;font-size:21px;font-weight:600;
+  background:var(--cream-2);color:var(--brown-2);flex:none;
+}
+.den .stepper:active{background:var(--line)}
+.den input.qty{
+  width:58px;height:40px;text-align:center;border-radius:11px;
+  border:1.5px solid var(--line);background:#fff;font-size:17px;font-weight:600;color:var(--ink);
+}
+.den input.qty:focus{outline:none;border-color:var(--brown-3)}
+.den .rowtot{flex:none;width:76px;text-align:right;font-size:13.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* ---------- Money inputs & summary ---------- */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13.5px;font-weight:600;color:var(--brown);margin-bottom:6px}
+.field input[type=text],.field input[type=number],.field input[type=date],.field select,.field textarea{
+  width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid var(--line);
+  background:#fff;color:var(--ink);font-size:17px;
+}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--brown-3)}
+.money-input{position:relative}
+.money-input::before{content:"€";position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);font-weight:600}
+.money-input input{padding-left:32px !important;font-weight:600}
+
+.sumrow{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px dashed var(--line);font-size:15px}
+.sumrow:last-child{border-bottom:none}
+.sumrow .lbl{color:var(--muted)}
+.sumrow .val{font-weight:700;font-variant-numeric:tabular-nums}
+.sumrow.big .lbl{color:var(--brown);font-weight:600}
+.sumrow.big .val{font-size:21px;font-family:'Miso',sans-serif;color:var(--brown)}
+
+.verdict{
+  border-radius:14px;padding:14px 16px;margin:14px 0;
+  display:flex;align-items:center;gap:12px;font-weight:600;font-size:15px;
+}
+.verdict .big{font-size:22px}
+.verdict.ok{background:var(--green-bg);color:var(--green)}
+.verdict.bad{background:var(--red-bg);color:var(--red)}
+.verdict.warn{background:var(--amber-bg);color:var(--amber)}
+
+/* ---------- Envelope ---------- */
+.envelope{
+  background:linear-gradient(160deg,#F0E2C8,#E4CFA6);
+  border:1.5px solid #CBAE79;border-radius:var(--radius);
+  padding:20px;text-align:center;margin:16px 0;position:relative;overflow:hidden;
+}
+.envelope::before{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(115deg,transparent 46%,rgba(255,255,255,.35) 50%,transparent 54%);
+}
+.envelope .cap{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#7A5E33;font-weight:700}
+.envelope .day{font-family:'Miso',sans-serif;font-size:34px;font-weight:700;color:#5C4327;margin:4px 0;letter-spacing:.04em}
+.envelope .amt{font-family:'Miso',sans-serif;font-size:26px;color:#7A5230;font-weight:600}
+.envelope .note{font-size:12.5px;color:#8A7147;margin-top:6px}
+
+/* ---------- Tables (admin) ---------- */
+.tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px}
+th{
+  text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.09em;
+  color:var(--muted);padding:8px 10px;border-bottom:2px solid var(--line);white-space:nowrap;
+}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle;white-space:nowrap;font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:none}
+td.num,th.num{text-align:right}
+
+.tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px}
+.tabs button{
+  flex:none;padding:9px 16px;border-radius:99px;font-size:14px;font-weight:600;
+  background:var(--paper);border:1px solid var(--line);color:var(--muted);
+}
+.tabs button.on{background:var(--brown-2);border-color:var(--brown-2);color:#FFF8EC}
+
+/* ---------- Misc ---------- */
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120%);
+  background:var(--ink);color:#FFF8EC;padding:13px 20px;border-radius:12px;
+  font-size:14.5px;font-weight:500;box-shadow:0 6px 24px rgba(0,0,0,.25);
+  transition:transform .25s ease;z-index:99;max-width:92vw;text-align:center;
+  visibility:hidden;   /* da vuoto spuntava come un pallino nero a schermo */
+}
+.toast.show{transform:translateX(-50%) translateY(0);visibility:visible}
+.toast.err{background:var(--red)}
+.spinner{
+  width:26px;height:26px;border-radius:50%;margin:30px auto;
+  border:3px solid var(--line);border-top-color:var(--brown-2);
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.center{text-align:center}
+.mt{margin-top:14px}
+.hidden{display:none !important}
+.hint{font-size:12.5px;color:var(--muted);line-height:1.5}
+.day-badge{
+  display:inline-block;font-family:'Miso',sans-serif;font-weight:700;
+  background:var(--cream-2);color:var(--brown);border-radius:8px;padding:2px 8px;font-size:12.5px;
+}
+.checkline{
+  display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px dashed var(--line);
+}
+.checkline:last-child{border-bottom:none}
+.checkline input[type=checkbox]{width:22px;height:22px;accent-color:var(--brown-2);flex:none}
+.checkline .amt{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.splash{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;text-align:center;
+}
+.splash img{width:min(300px,70vw);margin-bottom:6px}
+.splash .tag{font-family:'Miso',sans-serif;font-size:17px;color:var(--brown-3);font-style:italic;margin-bottom:34px}
+.splash h1{font-size:26px;color:var(--brown);margin-bottom:22px;font-weight:600}
+.store-btn{
+  width:100%;text-align:left;display:flex;align-items:center;gap:14px;
+  background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:20px;margin-bottom:14px;
+}
+.store-btn .n{font-family:'Miso',sans-serif;font-size:20px;font-weight:600;color:var(--brown)}
+.store-btn .a{font-size:13px;color:var(--muted);margin-top:2px}
+.store-btn .arrow{margin-left:auto;color:var(--brown-3);font-size:20px}
+.emp-btn{
+  width:100%;display:flex;align-items:center;gap:13px;
+  background:var(--paper);border:1px solid var(--line);border-radius:14px;
+  box-shadow:var(--shadow);padding:15px 17px;margin-bottom:10px;text-align:left;
+}
+.emp-btn .av{
+  width:42px;height:42px;border-radius:50%;flex:none;
+  background:var(--cream-2);color:var(--brown);display:flex;align-items:center;justify-content:center;
+  font-family:'Miso',sans-serif;font-weight:700;font-size:17px;
+}
+.emp-btn .n{font-weight:600;font-size:16.5px}
+.emp-btn .r{font-size:12px;color:var(--muted)}
+footer.cred{
+  position:fixed;bottom:0;left:0;right:0;text-align:center;
+  font-size:11px;color:var(--muted);padding:10px;
+  background:linear-gradient(transparent,var(--cream) 40%);pointer-events:none;
+}
+@media (min-width:700px){
+  .den .rowtot{width:96px}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+<footer class="cred">Miccone · Madia · Cassa contanti</footer>
+<script>
+/* ================= CONFIG ================= */
+const SUPA_URL = "https://cdyfdwwfbfitfjazxses.supabase.co";
+const SUPA_KEY = "sb_publishable_SgdIMeJOXfRP9P3ndw0S7Q_4JFoJ2oq";
+const LOGO = "../../shared/logo-tondo.png";
+
+const COINS = ["0.01","0.02","0.05","0.10","0.20","0.50","1","2"];
+const NOTES = ["5","10","20","50","100","200","500"];
+const NOTE_COLORS = {"5":"#8C8C8C","10":"#C4696B","20":"#4B7DB4","50":"#C98A2E","100":"#4E9B71","200":"#B0A03C","500":"#8A6FA8"};
+const GIORNI = ["DOMENICA","LUNEDÌ","MARTEDÌ","MERCOLEDÌ","GIOVEDÌ","VENERDÌ","SABATO"];
+const GIORNI_LC = ["domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato"];
+
+const ERRORS = {
+  "PIN_ERRATO":"PIN errato. Riprova.",
+  "TROPPI_TENTATIVI":"Troppi PIN sbagliati: aspetta 10 minuti e riprova.",
+  "SOLO_ADMIN":"Funzione riservata all'amministrazione.",
+  "CONTANTE_INFERIORE_AL_FONDO":"Il contante contato è inferiore al fondo cassa da lasciare. Ricontrolla il conteggio.",
+  "NEGOZIO_NON_TROVATO":"Punto vendita non trovato.",
+  "NESSUNA_BUSTA_SELEZIONATA":"Nessuna busta selezionata.",
+  "PIN_NON_VALIDO":"Il PIN deve essere di 4–8 cifre.",
+  "BUSTA_GIA_VERSATA":"Questa chiusura è già inclusa in un versamento: elimina prima il versamento.",
+  "NON_TROVATO":"Elemento non trovato."
+};
+
+/* ================= STATE ================= */
+let S = {
+  stores: [],
+  store: null,          // selected store object
+  employee: null,       // {id,name,role}
+  pin: null,
+  status: null          // daily status payload
+};
+try {
+  const saved = JSON.parse(sessionStorage.getItem("miccone_cassa") || "null");
+  if (saved) S = Object.assign(S, saved);
+} catch(e){}
+
+function persist(){
+  sessionStorage.setItem("miccone_cassa", JSON.stringify({
+    store:S.store, employee:S.employee, pin:S.pin
+  }));
+}
+
+/* ================= HELPERS ================= */
+const app = document.getElementById("app");
+let FONDO_OGGI = null;
+async function fondoOggi(){ if(FONDO_OGGI!=null) return FONDO_OGGI;
+  try{ const r = await rpc("cassa_fondo_oggi", {p_store:S.store.id}); FONDO_OGGI = Number(r.fondo_da_lasciare); }catch(e){ FONDO_OGGI = Number(S.store.float_target||200); }
+  return FONDO_OGGI; }
+/* se il dipendente e' gia' entrato nell'app Negozio, la Cassa riparte da li' */
+function sessioneAperta(){
+  try {
+    const v = JSON.parse(localStorage.getItem('miccone_sessione') || 'null');
+    if (!v || !v.store || !v.emp) return null;
+    if (Date.now() - (v.ts || 0) > 3*60*60*1000) return null;   // vale 3 ore
+    return v;
+  } catch(e) { return null; }
+}
+// se sono arrivato dall'app Negozio, ci torno segnando fatta la voce che ha aperto la Cassa
+function tornaInNegozio(){
+  try{
+    const rit=JSON.parse(localStorage.getItem('negozio_ritorno')||'null');
+    if(rit && Date.now()-(rit.ts||0)<3600*1000){
+      localStorage.setItem('negozio_fatto',JSON.stringify({cosa:rit.cosa,ts:Date.now()}));
+      localStorage.removeItem('negozio_ritorno');
+      location.href='Negozio-v2.html';
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+const eur = v => new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR"}).format(v ?? 0);
+const todayISO = () => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+const dateIT = iso => { const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; };
+const weekdayOf = iso => GIORNI[new Date(iso+"T12:00:00").getDay()];
+const weekdayLC = iso => GIORNI_LC[new Date(iso+"T12:00:00").getDay()];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function toast(msg, isErr){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (isErr ? " err" : "");
+  clearTimeout(t._h);
+  t._h = setTimeout(()=> t.className="toast", 3200);
+}
+
+async function rpc(fn, params){
+  const res = await fetch(`${SUPA_URL}/rest/v1/rpc/${fn}`, {
+    method:"POST",
+    headers:{ "apikey":SUPA_KEY, "Authorization":"Bearer "+SUPA_KEY, "Content-Type":"application/json" },
+    body: JSON.stringify(params || {})
+  });
+  const data = await res.json().catch(()=>null);
+  if (!res.ok){
+    const code = data && data.message ? data.message : "";
+    const friendly = ERRORS[code] || "Errore di comunicazione. Riprova.";
+    const err = new Error(friendly); err.code = code; throw err;
+  }
+  return data;
+}
+
+function topbar(){
+  return `
+  <header class="topbar">
+    <img class="logo" src="${LOGO}" alt="Miccone">
+    <div class="tit"><h1>Cassa contanti</h1>
+      <div class="sot">${S.store ? esc(S.store.name) : "Madia · il contante sotto controllo"}</div></div>
+    <div class="who">
+      ${S.employee ? `<b>${esc(S.employee.name)}</b><br><a href="#" onclick="logout();return false">esci</a>` : ""}
+    </div>
+  </header>`;
+}
+
+function spinner(){ return `<div class="spinner"></div>`; }
+
+/* ================= ROUTER ================= */
+const VIEWS = {};
+function go(name, arg){
+  window.scrollTo(0,0);
+  app.oninput = null; app.onclick = null;
+  VIEWS[name](arg);
+}
+function logout(){
+  S.employee = null; S.pin = null; S.status = null;
+  persist(); go("employees");
+}
+
+/* ================= VIEW: store select ================= */
+VIEWS.stores = async function(){
+  app.innerHTML = `<div class="wrap">${topbar()}
+    <div class="card">
+      <h2>Dove stai lavorando?</h2>
+      <div class="sub">Scegli il punto vendita per iniziare</div>
+      <div id="storeList" style="width:100%;display:flex;flex-direction:column">${spinner()}</div>
+    </div>
+  </div>`;
+  try{
+    S.stores = await rpc("cassa_stores");
+    document.getElementById("storeList").innerHTML = S.stores.map(s=>`
+      <button class="store-btn" onclick='pickStore("${s.id}")'>
+        <div><div class="n">${esc(s.name)}</div><div class="a">${esc(s.address||"")}</div></div>
+        <div class="arrow">›</div>
+      </button>`).join("");
+  }catch(e){
+    document.getElementById("storeList").innerHTML = `<p class="hint">${esc(e.message)}</p>`;
+  }
+};
+function pickStore(id){
+  S.store = S.stores.find(s=>s.id===id);
+  S.employee = null; S.pin = null;
+  persist(); go("employees");
+}
+
+/* ================= VIEW: employee select + PIN ================= */
+VIEWS.employees = async function(){
+  if (!S.store) return go("stores");
+  app.innerHTML = `<div class="wrap">${topbar()}
+    <button class="back" onclick="go('stores')">‹ Cambia punto vendita</button>
+    <div class="card">
+      <h2>Chi sei?</h2>
+      <div class="sub">Scegli il tuo nome per iniziare</div>
+      <div id="empList">${spinner()}</div>
+    </div>
+  </div>`;
+  try{
+    const emps = await rpc("cassa_employees", {p_store: S.store.id});
+    window._emps = emps;
+    document.getElementById("empList").innerHTML = emps.length ? emps.map((e,i)=>`
+      <button class="emp-btn" onclick='pickEmp(${i})'>
+        <div class="av">${esc(e.name.trim()[0].toUpperCase())}</div>
+        <div><div class="n">${esc(e.name)}</div>
+        <div class="r">${e.role==="admin"?"Amministrazione":(e.has_pin===false?"Entra col nome, senza PIN":"Punto vendita")}</div></div>
+      </button>`).join("")
+      : `<p class="hint">Nessun dipendente attivo. L'amministrazione può aggiungerli dall'area riservata.</p>`;
+  }catch(e){
+    document.getElementById("empList").innerHTML = `<p class="hint">${esc(e.message)}</p>`;
+  }
+};
+function pickEmp(i){ const e=window._emps[i]; if(e.has_pin===false){ loginNoPin(e); } else { VIEWS.pin(e); } }
+async function loginNoPin(emp){
+  try{ const me = await rpc("cassa_login",{p_employee:emp.id, p_pin:""});
+    if (!me || !me.id) throw new Error(ERRORS[me && me.errore] || ERRORS.PIN_ERRATO);
+    S.employee = me; S.pin = ""; persist(); go("home");
+  }catch(e){ toast(e.message,true); }
+}
+
+VIEWS.pin = function(emp){
+  let pin = "";
+  app.innerHTML = `<div class="wrap">${topbar()}
+    <button class="back" onclick="go('employees')">‹ Indietro</button>
+    <div class="card center">
+      <h2>Ciao ${esc(emp.name.split(" ")[0])}</h2>
+      <div class="sub">Inserisci il tuo PIN</div>
+      <div class="pin-dots" id="dots"></div>
+      <div class="pad" id="pad"></div>
+      <p class="hint mt" id="pinMsg"></p>
+    </div>
+  </div>`;
+  const dots = document.getElementById("dots");
+  function renderDots(){
+    const n = Math.max(4, Math.min(8, Math.max(pin.length,4)));
+    dots.innerHTML = Array.from({length:n},(_,i)=>`<span class="${i<pin.length?"full":""}"></span>`).join("");
+  }
+  renderDots();
+  const pad = document.getElementById("pad");
+  const keys = ["1","2","3","4","5","6","7","8","9","⌫","0","OK"];
+  pad.innerHTML = keys.map(k=>`<button class="${k==="⌫"||k==="OK"?"fn":""}" data-k="${k}">${k}</button>`).join("");
+  pad.onclick = async ev=>{
+    const k = ev.target.dataset && ev.target.dataset.k;
+    if(!k) return;
+    if(k==="⌫"){ pin = pin.slice(0,-1); renderDots(); return; }
+    if(k==="OK"){
+      if(pin.length<4) return;
+      document.getElementById("pinMsg").textContent = "Verifica…";
+      try{
+        const me = await rpc("cassa_login",{p_employee:emp.id, p_pin:pin});
+        if (!me || !me.id) throw new Error(ERRORS[me && me.errore] || ERRORS.PIN_ERRATO);
+        S.employee = me; S.pin = pin; persist();
+        go("home");
+      }catch(e){
+        document.getElementById("pinMsg").textContent = e.message;
+        pin=""; renderDots();
+      }
+      return;
+    }
+    if(pin.length<8){ pin+=k; renderDots(); }
+  };
+};
+
+/* ================= VIEW: home ================= */
+VIEWS.home = async function(){
+  if (!S.store) return go("stores");
+  if (!S.employee || S.pin==null) return go("employees");
+  const today = todayISO();
+  app.innerHTML = `<div class="wrap">${topbar()}
+    <div class="card" style="background:linear-gradient(150deg,var(--paper),#FBF5E9)">
+      <h2>${weekdayLC(today).replace(/^./,c=>c.toUpperCase())} ${dateIT(today)}</h2>
+      <div class="sub" id="statusLine">Carico la situazione di oggi…</div>
+      <div id="chips"></div>
+    </div>
+    <div id="menu">${spinner()}</div>
+  </div>`;
+  let st = null;
+  try{ st = await rpc("cassa_status",{p_employee:S.employee.id,p_pin:S.pin,p_store:S.store.id,p_date:today}); }
+  catch(e){ if(e.code==="PIN_ERRATO") return logout(); }
+  S.status = st;
+  const morningDone = st && st.morning;
+  const closureDone = st && st.closure;
+  const pend = (st && st.pending_envelopes) || [];
+  const pendTot = pend.reduce((a,c)=>a+Number(c.envelope_amount),0);
+  const dow = new Date().getDay();
+  const isDepositDay = dow===1 || dow===5;
+
+  document.getElementById("statusLine").textContent = "Situazione di oggi:";
+  const isAdmin = S.employee.role === "admin";
+  // conteggio cieco: differenze e quadrature solo per l'amministrazione
+  document.getElementById("chips").innerHTML = isAdmin ? `
+    <span class="chip ${morningDone ? (Math.abs(Number(st.morning.difference))<0.005?"ok":"bad") : "todo"}">
+      ${morningDone ? (Math.abs(Number(st.morning.difference))<0.005 ? "✓ Fondo confermato" : "⚠ Fondo con differenza "+eur(st.morning.difference)) : "○ Fondo da confermare"}</span>
+    <span class="chip ${closureDone ? (Math.abs(Number(st.closure.difference))<0.005?"ok":"bad") : "todo"}" style="margin-left:6px">
+      ${closureDone ? (Math.abs(Number(st.closure.difference))<0.005 ? "✓ Chiusura quadrata" : "⚠ Chiusura: "+eur(st.closure.difference)) : "○ Chiusura da fare"}</span>` : `
+    <span class="chip ${morningDone?"ok":"todo"}">${morningDone ? "✓ Fondo contato" : "○ Fondo da contare"}</span>
+    <span class="chip ${closureDone?"ok":"todo"}" style="margin-left:6px">${closureDone ? "✓ Chiusura fatta" : "○ Chiusura da fare"}</span>`;
+
+  document.getElementById("menu").innerHTML = `
+    ${isDepositDay && pend.length ? `
+    <div class="card" style="background:linear-gradient(150deg,#FBF0DC,#F6E8C9);border-color:#D9BC85">
+      <h2>🏦 Oggi si versa in banca</h2>
+      <div class="sub" style="margin-bottom:10px">È ${weekdayLC(today)}: ${pend.length===1?"c'è 1 busta":"ci sono "+pend.length+" buste"} da portare in banca, in totale ${eur(pendTot)}.</div>
+      <button class="btn btn-primary" onclick="go('deposit')">Registra il versamento</button>
+    </div>` : ""}
+    <button class="tile" onclick="go('morning')">
+      <div class="ico">☀️</div>
+      <div><div class="t">Apertura · conta fondo</div><div class="d">Ricontrolla e conferma il fondo cassa</div></div>
+      ${morningDone?`<span class="chip ok chip">fatto</span>`:""}
+    </button>
+    <button class="tile" onclick="go('closure')">
+      <div class="ico">🌙</div>
+      <div><div class="t">Chiusura serale</div><div class="d">Conta il contante e prepara la busta</div></div>
+      ${closureDone?`<span class="chip ok chip">fatta</span>`:""}
+    </button>
+    <button class="tile" onclick="go('deposit')">
+      <div class="ico">🏦</div>
+      <div><div class="t">Versamento in banca</div>
+      <div class="d">${pend.length ? pend.length+" bust"+(pend.length===1?"a":"e")+" da versare · "+eur(pendTot) : "Nessuna busta in attesa"}</div></div>
+      ${pend.length && isDepositDay ? `<span class="chip warn">oggi si versa</span>` : ""}
+    </button>
+    ${S.employee.role==="admin" ? `
+    <button class="tile" onclick="go('admin')">
+      <div class="ico">📋</div>
+      <div><div class="t">Amministrazione</div><div class="d">Registro, differenze, dipendenti, versamenti</div></div>
+    </button>` : ""}`;
+};
+
+/* ================= VIEW: evening closure ================= */
+VIEWS.closure = function(){
+  fondoOggi().then(f => {
+    const el = document.getElementById("fondoOggi");
+    if (el) el.textContent = eur(f);
+    if (typeof recalc === "function") recalc();
+  });
+  if (!S.employee) return go("stores");
+  const today = todayISO();
+  const prev = (S.status && S.status.closure) || null;
+  const counts = {};
+  [...COINS,...NOTES].forEach(d=> counts[d] = prev && prev.counts && prev.counts[d] ? Number(prev.counts[d]) : 0);
+  // If editing an existing closure we don't have counts in status (stripped) — start fresh.
+
+  function denRow(d, kind){
+    const face = kind==="coin"
+      ? `<div class="face coin ${Number(d)<0.1?"copper":""}">${Number(d)<1 ? Math.round(d*100)+"c" : d+"€"}</div>`
+      : `<div class="face note" style="background:${NOTE_COLORS[d]}">${d} €</div>`;
+    return `<div class="den" data-d="${d}">
+      ${face}
+      <div class="qty-wrap">
+        <button class="stepper" data-a="-1">−</button>
+        <input class="qty" type="number" inputmode="numeric" min="0" value="${counts[d]||0}">
+        <button class="stepper" data-a="1">+</button>
+      </div>
+      <div class="rowtot">${eur(0)}</div>
+    </div>`;
+  }
+
+  app.innerHTML = `<div class="wrap">${topbar()}
+    <button class="back" onclick="go('home')">‹ Home</button>
+    <div class="card">
+      <h2>🌙 Chiusura serale</h2>
+      <div class="sub">${weekdayLC(today).replace(/^./,c=>c.toUpperCase())} ${dateIT(today)} · ${esc(S.store.name)}
+      ${prev ? `<br><b style="color:var(--amber)">Attenzione: la chiusura di oggi è già stata registrata. Salvando la sostituisci.</b>`:""}</div>
+      <div class="den-group"><h3>Monete</h3>${COINS.map(d=>denRow(d,"coin")).join("")}</div>
+      <div class="den-group"><h3>Banconote</h3>${NOTES.map(d=>denRow(d,"note")).join("")}</div>
+    </div>
+    <div class="card">
+      <h2>Cassa</h2>
+      ${S.employee.role==="admin" ? `<div class="field">
+        <label>Contanti battuti oggi dal sistema di cassa</label>
+        <div class="money-input"><input id="posTotal" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"></div>
+      </div>` : `<input id="posTotal" type="hidden" value="">
+      <div class="field"><label>Conteggio in autonomia</label>
+        <div style="font-size:14.5px;color:var(--muted,#8a7d6e);line-height:1.5">Conta con calma e scrivi quello che trovi davvero.
+        La quadratura con la cassa la fa l'amministrazione: tu non devi far tornare nessun numero.</div></div>`}
+      <div class="field">
+        <label>Note (facoltative)</label>
+        <textarea id="notes" rows="2" placeholder="Es. resto dato in eccesso, buono, ecc."></textarea>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Riepilogo</h2>
+      <div class="sumrow big"><span class="lbl">Totale contato</span><span class="val" id="sumTot">€ 0,00</span></div>
+      <div class="sumrow"><span class="lbl">Fondo cassa da lasciare oggi</span><span class="val" id="fondoOggi">${eur(FONDO_OGGI ?? S.store.float_target)}</span></div>
+      <div class="sumrow"><span class="lbl">Da mettere in busta</span><span class="val" id="sumEnv">€ 0,00</span></div>
+      ${S.employee.role==="admin" ? `<div class="sumrow"><span class="lbl">Contanti battuti in cassa</span><span class="val" id="sumPos">€ 0,00</span></div>
+      <div id="verdict"></div>` : `<span id="sumPos" style="display:none"></span><span id="verdict" style="display:none"></span>`}
+      <div class="envelope">
+        <div class="cap">Metti il contante nella busta</div>
+        <div class="day">${weekdayOf(today)}</div>
+        <div class="amt" id="envAmt">€ 0,00</div>
+        <div class="note">Scrivi sulla busta anche la data ${dateIT(today)} e il punto vendita</div>
+      </div>
+      <button class="btn btn-primary" id="saveBtn" disabled>Registra chiusura</button>
+      <p class="hint center mt">La quadratura viene ricalcolata e salvata anche sul server.</p>
+    </div>
+  </div>`;
+
+  // fondo variabile del giorno: arriva dal server dopo il primo disegno, quindi va riletto a ogni calcolo
+  const floatT = () => Number(FONDO_OGGI ?? S.store.float_target);
+  function recalc(){
+    if (!document.querySelector(".den")) return {};
+    let tot = 0;
+    document.querySelectorAll(".den").forEach(row=>{
+      const d = row.dataset.d;
+      const q = Math.max(0, parseInt(row.querySelector(".qty").value)||0);
+      counts[d] = q;
+      const rt = q * Number(d);
+      tot += rt;
+      row.querySelector(".rowtot").textContent = q ? eur(rt) : "—";
+    });
+    tot = Math.round(tot*100)/100;
+    const pos = Math.round((parseFloat(document.getElementById("posTotal").value)||0)*100)/100;
+    const env = Math.round((tot - floatT())*100)/100;
+    const diff = Math.round((tot - floatT() - pos)*100)/100;
+    document.getElementById("sumTot").textContent = eur(tot);
+    document.getElementById("sumEnv").textContent = eur(Math.max(env,0));
+    document.getElementById("sumPos").textContent = eur(pos);
+    document.getElementById("envAmt").textContent = eur(Math.max(env,0));
+    const v = document.getElementById("verdict");
+    // il campo incasso esiste solo per l'amministrazione: per il negozio basta il conteggio
+    const posEntered = S.employee.role==="admin" ? document.getElementById("posTotal").value !== "" : true;
+    if (!posEntered || tot===0){
+      v.innerHTML = `<div class="verdict warn"><span class="big">🧮</span> Conta il contante e inserisci l'incasso di cassa</div>`;
+    } else if (env < 0){
+      v.innerHTML = `<div class="verdict bad"><span class="big">✕</span> Il contante (${eur(tot)}) è meno del fondo cassa da lasciare (${eur(floatT())})</div>`;
+    } else if (Math.abs(diff) < 0.005){
+      v.innerHTML = `<div class="verdict ok"><span class="big">✓</span> Cassa quadrata: conta e incasso corrispondono</div>`;
+    } else {
+      v.innerHTML = `<div class="verdict bad"><span class="big">⚠</span> Differenza di ${eur(diff)} (${diff>0?"eccedenza":"ammanco"} rispetto alla cassa)</div>`;
+    }
+    document.getElementById("saveBtn").disabled = !(posEntered && tot>0 && env>=0);
+    return {tot,pos,env,diff};
+  }
+  app.oninput = recalc;
+  app.onclick = ev=>{
+    const b = ev.target.closest(".stepper");
+    if(!b) return;
+    const inp = b.parentElement.querySelector(".qty");
+    inp.value = Math.max(0,(parseInt(inp.value)||0) + Number(b.dataset.a));
+    recalc();
+  };
+  recalc();
+
+  document.getElementById("saveBtn").onclick = async ()=>{
+    const {tot,pos,env,diff} = recalc();
+    if (Math.abs(diff)>=0.005 && !document.getElementById("notes").value.trim()){
+      if(S.employee.role==="admin" && !confirm(`C'è una differenza di ${eur(diff)}. Vuoi registrare comunque senza aggiungere una nota?`)) return;
+    }
+    const btn = document.getElementById("saveBtn");
+    btn.disabled = true; btn.textContent = "Salvo…";
+    try{
+      const row = await rpc("cassa_submit_closure",{
+        p_employee:S.employee.id, p_pin:S.pin, p_store:S.store.id, p_date:today,
+        p_counts:counts, p_pos_total:pos, p_notes:document.getElementById("notes").value.trim()||null
+      });
+      VIEWS.closureDone(row);
+    }catch(e){
+      toast(e.message, true);
+      btn.disabled=false; btn.textContent="Registra chiusura";
+    }
+  };
+};
+
+VIEWS.closureDone = function(row){
+  const ok = Math.abs(Number(row.difference))<0.005;
+  // busta numerata: il numero e' progressivo per negozio, i salti si vedono
+  (async () => {
+    try {
+      const n = await rpc("cassa_numera_busta", {p_closure: row.id});
+      const el = document.getElementById("nBusta");
+      if (el) el.textContent = "n. " + n;
+      const scritta = document.getElementById("bustaScritta");
+      if (scritta) scritta.textContent = "Scrivi sulla busta: n. " + n;
+    } catch(e) {}
+  })();
+  app.innerHTML = `<div class="wrap">${topbar()}
+    <div class="card center">
+      <div style="font-size:52px;margin:8px 0">${S.employee.role==="admin" ? (ok?"✅":"⚠️") : "✅"}</div>
+      <h2>Chiusura registrata</h2>
+      <div class="sub">${weekdayLC(row.closure_date).replace(/^./,c=>c.toUpperCase())} ${dateIT(row.closure_date)} · ${esc(S.store.name)}</div>
+      <div class="sumrow"><span class="lbl">Totale contato</span><span class="val">${eur(row.total_counted)}</span></div>
+      ${S.employee.role==="admin" ? `<div class="sumrow"><span class="lbl">Contanti battuti in cassa</span><span class="val">${eur(row.pos_cash_total)}</span></div>
+      <div class="sumrow"><span class="lbl">Quadratura</span><span class="val" style="color:${ok?"var(--green)":"var(--red)"}">${ok?"OK":eur(row.difference)}</span></div>` : ``}
+      <div class="sumrow"><span class="lbl">Numero della busta</span><span class="val" id="nBusta">—</span></div>
+      <div class="envelope">
+        <div class="cap">Ora fai così</div>
+        <div class="day">${weekdayOf(row.closure_date)}</div>
+        <div class="amt">${eur(row.envelope_amount)} in busta</div>
+        <div class="note">Lascia ${eur(row.float_target)} in cassa come fondo per domattina</div>
+        <div class="note" id="bustaScritta" style="font-weight:700">Scrivi sulla busta il numero…</div>
+      </div>
+      <button class="btn btn-primary" onclick="if(!tornaInNegozio())go('home')">${sessioneAperta()&&localStorage.getItem('negozio_ritorno')?'Torna al Negozio ✓':'Torna alla home'}</button>
+    </div>
+  </div>`;
+};
+
+/* ================= VIEW: morning check ================= */
+VIEWS.morning = async function(){
+  if (!S.employee) return go("stores");
+  const today = todayISO();
+  let st = S.status;
+  try{ st = await rpc("cassa_status",{p_employee:S.employee.id,p_pin:S.pin,p_store:S.store.id,p_date:today}); S.status=st; }catch(e){}
+  const ADMIN = S.employee.role === "admin";
+  const expected = st && st.previous_closure ? Number(st.previous_closure.float_target) : Number(S.store.float_target);
+  const prevDate = st && st.previous_closure ? st.previous_closure.closure_date : null;
+  const already = st && st.morning;
+
+  app.innerHTML = `<div class="wrap">${topbar()}
+    <button class="back" onclick="go('home')">‹ Home</button>
+    <div class="card">
+      <h2>☀️ Conta fondo cassa</h2>
+      <div class="sub">${weekdayLC(today).replace(/^./,c=>c.toUpperCase())} ${dateIT(today)} · ${esc(S.store.name)}
+      ${already?`<br><b style="color:var(--amber)">Il fondo di oggi è già stato confermato (${eur(already.float_counted)}). Salvando lo aggiorni.</b>`:""}</div>
+      ${ADMIN ? `<div class="verdict warn" style="margin-top:0"><span class="big">💶</span>
+        Dovresti trovare in cassa <b>&nbsp;${eur(expected)}</b>${prevDate?`&nbsp;(lasciati ${weekdayLC(prevDate)} ${dateIT(prevDate)})`:""}
+      </div>` : `<div class="hint" style="margin-bottom:12px">Conta con calma tutto il contante che trovi in cassa
+        e scrivi la cifra vera. Il confronto lo fa l'amministrazione: tu non devi far tornare nessun numero.</div>`}
+      <div class="field">
+        <label>Quanto hai contato?</label>
+        <div class="money-input"><input id="counted" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"></div>
+      </div>
+      <div id="mVerdict"></div>
+      <div class="field">
+        <label>Note (facoltative)</label>
+        <textarea id="mNotes" rows="2" placeholder="Es. trovato scontrino di rettifica, moneta estera…"></textarea>
+      </div>
+      <button class="btn btn-primary" id="mSave" disabled>Conferma fondo cassa</button>
+    </div>
+  </div>`;
+
+  const inp = document.getElementById("counted");
+  function reval(){
+    const v = inp.value==="" ? null : Math.round(parseFloat(inp.value)*100)/100;
+    const box = document.getElementById("mVerdict");
+    if(v===null || isNaN(v)){ box.innerHTML=""; document.getElementById("mSave").disabled=true; return null; }
+    const diff = Math.round((v-expected)*100)/100;
+    // conteggio cieco: solo l'amministrazione vede il confronto col previsto
+    if (ADMIN) box.innerHTML = Math.abs(diff)<0.005
+      ? `<div class="verdict ok"><span class="big">✓</span> Il fondo corrisponde</div>`
+      : `<div class="verdict bad"><span class="big">⚠</span> Differenza di ${eur(diff)} rispetto al previsto</div>`;
+    document.getElementById("mSave").disabled = false;
+    return {v,diff};
+  }
+  inp.addEventListener("input", reval);
+
+  document.getElementById("mSave").onclick = async ()=>{
+    const r = reval(); if(!r) return;
+    const notes = document.getElementById("mNotes").value.trim();
+    if (ADMIN && Math.abs(r.diff)>=0.005 && !notes){ toast("Il fondo non corrisponde: scrivi una nota per l'amministrazione.", true); return; }
+    const btn = document.getElementById("mSave"); btn.disabled=true; btn.textContent="Salvo…";
+    try{
+      await rpc("cassa_submit_morning",{
+        p_employee:S.employee.id,p_pin:S.pin,p_store:S.store.id,p_date:today,
+        p_float_counted:r.v, p_notes:notes||null
+      });
+      toast(S.employee.role==="admin" ? (Math.abs(r.diff)<0.005 ? "Fondo cassa confermato ✓" : "Registrato con differenza — l'amministrazione lo vedrà.") : "Registrato ✓ grazie");
+      if(tornaInNegozio()) return;
+      go("home");
+    }catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent="Conferma fondo cassa"; }
+  };
+};
+
+/* ================= VIEW: deposit ================= */
+VIEWS.deposit = async function(){
+  if (!S.employee) return go("stores");
+  const today = todayISO();
+  app.innerHTML = `<div class="wrap">${topbar()}
+    <button class="back" onclick="go('home')">‹ Home</button>
+    <div class="card">
+      <h2>🏦 Versamento in banca</h2>
+      <div class="sub">Le buste si versano il <b>lunedì</b> e il <b>venerdì</b>. Seleziona le buste che stai portando in banca.</div>
+      <div id="envList">${spinner()}</div>
+      <div class="sumrow big mt"><span class="lbl">Totale da versare</span><span class="val" id="depTot">€ 0,00</span></div>
+      <div class="field mt"><label>Note (facoltative)</label><input id="depNotes" type="text" placeholder="Es. versato allo sportello di…"></div>
+      <button class="btn btn-primary" id="depBtn" disabled>Registra versamento</button>
+    </div>
+  </div>`;
+  let pend = [];
+  try{
+    const st = await rpc("cassa_status",{p_employee:S.employee.id,p_pin:S.pin,p_store:S.store.id,p_date:today});
+    S.status = st; pend = st.pending_envelopes || [];
+  }catch(e){ document.getElementById("envList").innerHTML = `<p class="hint">${esc(e.message)}</p>`; return; }
+
+  if (!pend.length){
+    document.getElementById("envList").innerHTML = `<p class="hint" style="padding:10px 0">Nessuna busta in attesa di versamento. 👌</p>`;
+    return;
+  }
+  document.getElementById("envList").innerHTML = pend.map(p=>`
+    <label class="checkline">
+      <input type="checkbox" data-id="${p.id}" data-amt="${p.envelope_amount}" checked>
+      <span><span class="day-badge">${weekdayOf(p.closure_date)}</span> &nbsp;${dateIT(p.closure_date)}</span>
+      <span class="amt">${eur(p.envelope_amount)}</span>
+    </label>`).join("");
+
+  function recount(){
+    let tot=0, n=0;
+    document.querySelectorAll("#envList input:checked").forEach(c=>{tot+=Number(c.dataset.amt);n++;});
+    document.getElementById("depTot").textContent = eur(tot);
+    document.getElementById("depBtn").disabled = n===0;
+    document.getElementById("depBtn").textContent = n ? `Registra versamento di ${n} bust${n===1?"a":"e"}` : "Registra versamento";
+  }
+  document.getElementById("envList").addEventListener("change", recount);
+  recount();
+
+  document.getElementById("depBtn").onclick = async ()=>{
+    const ids = [...document.querySelectorAll("#envList input:checked")].map(c=>c.dataset.id);
+    if(!ids.length) return;
+    if(!confirm("Confermi il versamento in banca delle buste selezionate?")) return;
+    const btn=document.getElementById("depBtn"); btn.disabled=true; btn.textContent="Salvo…";
+    try{
+      const dep = await rpc("cassa_record_deposit",{
+        p_employee:S.employee.id,p_pin:S.pin,p_store:S.store.id,
+        p_closure_ids:ids, p_date:today,
+        p_notes:document.getElementById("depNotes").value.trim()||null
+      });
+      toast(`Versamento di ${eur(dep.total_amount)} registrato ✓`);
+      go("home");
+    }catch(e){ toast(e.message,true); btn.disabled=false; recount(); }
+  };
+};
+
+/* ================= VIEW: admin ================= */
+let ADM = { tab:"registro", from:null, to:null, data:null, emps:null };
+VIEWS.admin = async function(){
+  if (!S.employee || S.employee.role!=="admin") return go("home");
+  if (!ADM.to){ ADM.to = todayISO(); const d=new Date(); d.setDate(d.getDate()-13);
+    ADM.from = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  app.innerHTML = `<div class="wrap wide">${topbar()}
+    <button class="back" onclick="go('home')">‹ Home</button>
+    <div class="card" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div class="field" style="margin:0"><label>Dal</label><input type="date" id="admFrom" value="${ADM.from}"></div>
+      <div class="field" style="margin:0"><label>Al</label><input type="date" id="admTo" value="${ADM.to}"></div>
+      <button class="btn btn-ghost" style="width:auto;padding:12px 22px" onclick="admReload()">Aggiorna</button>
+      <button class="btn btn-ghost" style="width:auto;padding:12px 22px" onclick="admCSV()">Esporta CSV</button>
+    </div>
+    <div class="tabs">
+      ${["registro|Registro giornaliero","versamenti|Versamenti","dipendenti|Dipendenti","impostazioni|Impostazioni"]
+        .map(t=>{const [k,l]=t.split("|");return `<button class="${ADM.tab===k?"on":""}" onclick="admTab('${k}')">${l}</button>`}).join("")}
+    </div>
+    <div id="admBody">${spinner()}</div>
+  </div>`;
+  await admReload(true);
+};
+function admTab(k){ ADM.tab=k; VIEWS.admin(); }
+async function admReload(soft){
+  const f = document.getElementById("admFrom"), t = document.getElementById("admTo");
+  if (f && t){ ADM.from=f.value; ADM.to=t.value; }
+  const body = document.getElementById("admBody");
+  if (!soft) body.innerHTML = spinner();
+  try{
+    if (ADM.tab==="dipendenti"){
+      ADM.emps = await rpc("cassa_admin_employees",{p_employee:S.employee.id,p_pin:S.pin});
+    } else if (ADM.tab!=="impostazioni"){
+      ADM.data = await rpc("cassa_overview",{p_employee:S.employee.id,p_pin:S.pin,p_from:ADM.from,p_to:ADM.to});
+    }
+    body.innerHTML = admRender();
+  }catch(e){ body.innerHTML = `<div class="card"><p class="hint">${esc(e.message)}</p></div>`; }
+}
+function diffBadge(v){
+  const n = Number(v);
+  if (Math.abs(n)<0.005) return `<span class="chip ok">OK</span>`;
+  return `<span class="chip bad">${eur(n)}</span>`;
+}
+function admRender(){
+  if (ADM.tab==="registro"){
+    const cls = (ADM.data&&ADM.data.closures)||[];
+    const mor = (ADM.data&&ADM.data.mornings)||[];
+    const morMap = {}; mor.forEach(m=> morMap[m.store_id+"|"+m.check_date]=m);
+    if(!cls.length && !mor.length) return `<div class="card"><p class="hint">Nessun dato nel periodo selezionato.</p></div>`;
+    return `<div class="card"><h2>Chiusure serali</h2><div class="sub">Quadratura = contato − fondo − incasso di cassa</div>
+    <div class="tbl-scroll"><table>
+      <tr><th>Data</th><th>Busta</th><th>Negozio</th><th>Chi</th><th class="num">Contato</th><th class="num">Cassa</th><th class="num">Fondo</th><th class="num">In busta</th><th>Quadratura</th><th>Fondo mattina seg.</th><th>Versata</th><th>Note</th><th></th></tr>
+      ${cls.map(c=>{
+        const nextD = new Date(c.closure_date+"T12:00:00"); nextD.setDate(nextD.getDate()+1);
+        const nk = c.store_id+"|"+nextD.toISOString().slice(0,10);
+        const m = morMap[nk];
+        return `<tr>
+        <td>${dateIT(c.closure_date)}</td>
+        <td><span class="day-badge">${weekdayOf(c.closure_date)}</span></td>
+        <td>${esc(c.store_name)}</td><td>${esc(c.employee_name)}</td>
+        <td class="num">${eur(c.total_counted)}</td>
+        <td class="num">${eur(c.pos_cash_total)}</td>
+        <td class="num">${eur(c.float_target)}</td>
+        <td class="num"><b>${eur(c.envelope_amount)}</b></td>
+        <td>${diffBadge(c.difference)}</td>
+        <td>${m ? (Math.abs(Number(m.difference))<0.005?`<span class="chip ok">confermato</span>`:`<span class="chip bad">${eur(m.difference)}</span>`) : `<span class="chip todo">—</span>`}</td>
+        <td>${c.deposited?`<span class="chip ok">sì</span>`:`<span class="chip warn">no</span>`}</td>
+        <td style="white-space:normal;max-width:220px">${esc(c.notes||"")}</td>
+        <td><button class="btn btn-ghost" style="width:auto;padding:7px 12px;font-size:12.5px;display:inline-flex" onclick="admDelClosure('${c.id}','${dateIT(c.closure_date)}')">Elimina</button></td>
+      </tr>`}).join("")}
+    </table></div></div>
+    <div class="card"><h2>Conferme fondo (mattina)</h2>
+    <div class="tbl-scroll"><table>
+      <tr><th>Data</th><th>Negozio</th><th>Chi</th><th class="num">Previsto</th><th class="num">Contato</th><th>Esito</th><th>Note</th></tr>
+      ${mor.length?mor.map(m=>`<tr><td>${dateIT(m.check_date)}</td><td>${esc(m.store_name)}</td><td>${esc(m.employee_name)}</td>
+        <td class="num">${eur(m.expected_float)}</td><td class="num">${eur(m.float_counted)}</td>
+        <td>${diffBadge(m.difference)}</td><td style="white-space:normal;max-width:220px">${esc(m.notes||"")}</td></tr>`).join("")
+        :`<tr><td colspan="7" class="hint">Nessuna conferma nel periodo.</td></tr>`}
+    </table></div></div>`;
+  }
+  if (ADM.tab==="versamenti"){
+    const deps=(ADM.data&&ADM.data.deposits)||[];
+    if(!deps.length) return `<div class="card"><p class="hint">Nessun versamento nel periodo selezionato.</p></div>`;
+    return `<div class="card"><h2>Versamenti in banca</h2>
+    <div class="tbl-scroll"><table>
+      <tr><th>Data</th><th>Negozio</th><th>Chi</th><th class="num">Importo</th><th>Buste versate</th><th>Note</th><th></th></tr>
+      ${deps.map(d=>`<tr><td>${dateIT(d.deposit_date)}</td><td>${esc(d.store_name)}</td><td>${esc(d.employee_name)}</td>
+        <td class="num"><b>${eur(d.total_amount)}</b></td>
+        <td style="white-space:normal;max-width:340px">${(d.envelopes||[]).map(e=>`<span class="day-badge" title="${dateIT(e.closure_date)}">${weekdayOf(e.closure_date)} ${dateIT(e.closure_date).slice(0,5)} · ${eur(e.envelope_amount)}</span>`).join(" ")}</td>
+        <td style="white-space:normal;max-width:200px">${esc(d.notes||"")}</td>
+        <td><button class="btn btn-ghost" style="width:auto;padding:7px 12px;font-size:12.5px;display:inline-flex" onclick="admDelDeposit('${d.id}')">Elimina</button></td></tr>`).join("")}
+    </table></div></div>`;
+  }
+  if (ADM.tab==="dipendenti"){
+    const emps = ADM.emps||[];
+    return `<div class="card"><h2>Dipendenti</h2>
+    <div class="tbl-scroll"><table>
+      <tr><th>Nome</th><th>Ruolo</th><th>Punto vendita</th><th>Stato</th><th></th></tr>
+      ${emps.map(e=>`<tr><td><b>${esc(e.name)}</b></td>
+        <td>${e.role==="admin"?"Amministrazione":(e.has_pin?"Staff":"Staff · senza PIN")}</td>
+        <td>${esc(e.store_name||"Tutti")}</td>
+        <td>${e.active?`<span class="chip ok">attivo</span>`:`<span class="chip bad">disattivato</span>`}</td>
+        <td>
+          <button class="btn btn-ghost" style="width:auto;padding:7px 12px;font-size:12.5px;display:inline-flex" onclick="admResetPin('${e.id}','${esc(e.name)}')">Nuovo PIN</button>
+          ${e.id!==S.employee.id?`<button class="btn btn-ghost" style="width:auto;padding:7px 12px;font-size:12.5px;display:inline-flex" onclick="admToggle('${e.id}',${!e.active})">${e.active?"Disattiva":"Riattiva"}</button>`:""}
+        </td></tr>`).join("")}
+    </table></div></div>
+    <div class="card"><h2>Aggiungi dipendente</h2>
+      <div class="field"><label>Nome</label><input id="neName" type="text" placeholder="Es. Maria Rossi"></div>
+      <div class="field"><label>Punto vendita</label>
+        <select id="neStore"><option value="">Tutti i punti vendita</option>
+        ${S.stores.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("")}</select></div>
+      <div class="field"><label>Ruolo</label>
+        <select id="neRole"><option value="staff">Staff</option><option value="admin">Amministrazione</option></select></div>
+      <div class="field"><label>PIN (facoltativo — serve solo per il ruolo Amministrazione)</label><input id="nePin" type="text" inputmode="numeric" maxlength="8" placeholder="Vuoto = entra col solo nome"></div>
+      <button class="btn btn-primary" onclick="admAddEmp()">Aggiungi</button>
+    </div>`;
+  }
+  // impostazioni
+  return `<div class="card"><h2>Fondo cassa per punto vendita</h2>
+    <div class="sub">Importo fisso che deve restare in cassa ogni sera e ritrovarsi ogni mattina.</div>
+    ${S.stores.map(s=>`
+      <div class="field"><label>${esc(s.name)}</label>
+      <div style="display:flex;gap:10px">
+        <div class="money-input" style="flex:1"><input id="fl_${s.id}" type="number" step="0.01" min="0" value="${Number(s.float_target).toFixed(2)}"></div>
+        <button class="btn btn-ghost" style="width:auto;padding:12px 20px" onclick="admSetFloat('${s.id}')">Salva</button>
+      </div></div>`).join("")}
+    <p class="hint">Il nuovo importo vale dalle prossime chiusure; quelle già registrate restano invariate.</p>
+  </div>`;
+}
+async function admResetPin(id, name){
+  const pin = prompt(`Nuovo PIN per ${name} (4–8 cifre, lascia vuoto per togliere il PIN allo staff):`);
+  if (pin===null) return;
+  try{
+    if (pin.trim()==="") await rpc("cassa_admin_update_employee",{p_employee:S.employee.id,p_pin:S.pin,p_target:id,p_clear_pin:true});
+    else await rpc("cassa_admin_update_employee",{p_employee:S.employee.id,p_pin:S.pin,p_target:id,p_new_pin:pin.trim()});
+    toast("PIN aggiornato ✓"); admReload();
+  }catch(e){ toast(e.message,true); }
+}
+async function admToggle(id, active){
+  try{
+    await rpc("cassa_admin_update_employee",{p_employee:S.employee.id,p_pin:S.pin,p_target:id,p_active:active});
+    toast(active?"Dipendente riattivato":"Dipendente disattivato"); admReload();
+  }catch(e){ toast(e.message,true); }
+}
+async function admDelClosure(id, dateLabel){
+  if(!confirm(`Eliminare la chiusura del ${dateLabel}? Potrà essere rifatta da capo.`)) return;
+  try{
+    await rpc("cassa_admin_delete_closure",{p_employee:S.employee.id,p_pin:S.pin,p_closure:id});
+    toast("Chiusura eliminata"); admReload();
+  }catch(e){ toast(e.message,true); }
+}
+async function admDelDeposit(id){
+  if(!confirm("Eliminare questo versamento? Le buste torneranno tra quelle da versare.")) return;
+  try{
+    await rpc("cassa_admin_delete_deposit",{p_employee:S.employee.id,p_pin:S.pin,p_deposit:id});
+    toast("Versamento eliminato"); admReload();
+  }catch(e){ toast(e.message,true); }
+}
+async function admAddEmp(){
+  const name=document.getElementById("neName").value.trim();
+  const pin=document.getElementById("nePin").value.trim();
+  if(!name){ toast("Inserisci il nome.",true); return; }
+  try{
+    await rpc("cassa_admin_add_employee",{p_employee:S.employee.id,p_pin:S.pin,p_name:name,
+      p_role:document.getElementById("neRole").value,
+      p_store:document.getElementById("neStore").value||null, p_new_pin:pin});
+    toast("Dipendente aggiunto ✓"); admReload();
+  }catch(e){ toast(e.message,true); }
+}
+async function admSetFloat(storeId){
+  const v = parseFloat(document.getElementById("fl_"+storeId).value);
+  if (isNaN(v)||v<0){ toast("Importo non valido.",true); return; }
+  try{
+    await rpc("cassa_admin_set_float",{p_employee:S.employee.id,p_pin:S.pin,p_store:storeId,p_float:v});
+    const s = S.stores.find(x=>x.id===storeId); if(s) s.float_target=v;
+    if (S.store && S.store.id===storeId) S.store.float_target=v;
+    persist(); toast("Fondo cassa aggiornato ✓");
+  }catch(e){ toast(e.message,true); }
+}
+function admCSV(){
+  const cls=(ADM.data&&ADM.data.closures)||[];
+  if(!cls.length){ toast("Niente da esportare: apri prima il Registro.",true); return; }
+  const sep=";", num=v=>String(Number(v).toFixed(2)).replace(".",",");
+  let csv="Data;Giorno busta;Negozio;Dipendente;Totale contato;Contanti cassa;Fondo;In busta;Differenza;Versata;Note\n";
+  cls.forEach(c=>{ csv+=[dateIT(c.closure_date),weekdayOf(c.closure_date),c.store_name,c.employee_name,
+    num(c.total_counted),num(c.pos_cash_total),num(c.float_target),num(c.envelope_amount),num(c.difference),
+    c.deposited?"si":"no",(c.notes||"").replace(/[;\n]/g," ")].join(sep)+"\n"; });
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"}));
+  a.download=`controllo_cassa_${ADM.from}_${ADM.to}.csv`; a.click();
+}
+
+/* ================= BOOT ================= */
+(async function(){
+  // schermata richiesta dall'app Negozio (#morning = fondo del mattino, #closure = chiusura)
+  const H=(location.hash||'').replace('#','');
+  const vistaChiesta=(H==='morning'||H==='closure')?H:'home';
+  // arrivo dall'app Negozio gia' riconosciuto: niente doppia scelta di negozio e persona
+  const ses = sessioneAperta();
+  if (ses && (!S.employee || !S.store)) {
+    S.store = ses.store; S.employee = ses.emp; S.pin = ses.pin || "";
+    try {
+      S.stores = await rpc("cassa_stores");
+      const fresh = S.stores.find(x => x.id === S.store.id);
+      if (fresh) S.store = fresh;
+      go(vistaChiesta); return;
+    } catch(e) {}
+  }
+  if (S.store && S.employee && S.pin!=null){
+    try{
+      S.stores = await rpc("cassa_stores");
+      const fresh = S.stores.find(s=>s.id===S.store.id);
+      if (fresh) S.store = fresh;
+      go("home"); return;
+    }catch(e){}
+  } else if (S.store){
+    try{ S.stores = await rpc("cassa_stores");
+      const fresh = S.stores.find(s=>s.id===S.store.id);
+      if (fresh){ S.store=fresh; go("employees"); return; }
+    }catch(e){}
+  }
+  go("stores");
+})();
+</script>
+<a href="Negozio.html" style="position:fixed;left:14px;bottom:14px;background:#3E2A1E;color:#fff;
+  text-decoration:none;border-radius:12px;padding:10px 16px;font-family:inherit;font-size:14px;z-index:99">← Negozio</a>
+</body>
+</html>

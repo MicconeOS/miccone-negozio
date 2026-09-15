@@ -1,0 +1,78 @@
+/* ============================================================
+   MADIA — vestito unico del sistema (Vestito A, scelto da Beppe il 19/8/2026)
+   Testata caffè scura + logo tondo. Cambia QUI e cambia ovunque.
+   Ogni pagina lo importa con:
+   <link rel="stylesheet" href="../../shared/madia.css">  (aggiusta i ../)
+   e usa la testata standard:
+   <header class="m-hdr"><img src="...logo tondo..."><div>
+     <h1>Nome modulo</h1><div class="m-sot">Madia · sottotitolo</div>
+   </div></header>
+   ============================================================ */
+
+@font-face{font-family:'Miso';src:url('fonts/Miso-Regular.woff2') format('woff2');font-weight:400;}
+@font-face{font-family:'Miso';src:url('fonts/Miso-Bold.woff2') format('woff2');font-weight:700;}
+
+:root{
+  --crosta:#7B4D35; --caffe:#3E2A1E; --dorata:#C98A3C; --rosso:#D63A2B;
+  --panna:#FBF7F0; --crema:#F4EEDF; --sabbia:#E6DACA; --inchiostro:#2B2723;
+  --campagna:#6F7A45; --grigio:#8a7d6e;
+}
+
+*{box-sizing:border-box;}
+body.madia{margin:0;background:var(--crema);color:var(--inchiostro);
+  font-family:'Miso','Trebuchet MS',sans-serif;}
+.m-wrap{max-width:1060px;margin:0 auto;padding:0 14px 60px;}
+
+/* ---- testata scura standard ---- */
+.m-hdr{background:var(--caffe);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:14px;}
+.m-hdr img{width:56px;height:56px;border-radius:50%;background:#fff;flex-shrink:0;}
+.m-hdr h1{font-size:27px;font-weight:700;margin:0;line-height:1.1;color:#fff;}
+.m-hdr .m-sot{font-size:13px;color:#cbbba9;}
+.m-hdr .m-dx{margin-left:auto;font-size:13px;color:#cbbba9;text-align:right;}
+
+/* ---- linguette sotto la testata ---- */
+.m-tabs{display:flex;gap:4px;background:var(--caffe);padding:0 14px;overflow-x:auto;}
+.m-tabs a,.m-tabs span{padding:9px 16px;font-size:14.5px;color:#cbbba9;border-radius:10px 10px 0 0;
+  text-decoration:none;white-space:nowrap;cursor:pointer;}
+.m-tabs .on{background:var(--crema);color:var(--caffe);font-weight:700;}
+
+/* ---- riquadri numero (KPI) ---- */
+.m-kpi{display:flex;gap:12px;flex-wrap:wrap;margin:20px 0;}
+.m-kpi>div{background:var(--panna);border:1px solid var(--sabbia);border-radius:14px;padding:12px 18px;}
+.m-kpi b{display:block;font-size:26px;color:var(--crosta);}
+.m-kpi span{font-size:13px;color:var(--grigio);}
+
+/* ---- tabelle ---- */
+.m-wrap h2{font-size:23px;color:var(--crosta);margin:26px 0 8px;}
+table.m-tab{width:100%;border-collapse:collapse;background:var(--panna);
+  border:1px solid var(--sabbia);border-radius:12px;overflow:hidden;}
+.m-tab th{background:var(--caffe);color:#fff;font-size:13px;letter-spacing:.6px;
+  padding:9px 10px;text-align:left;font-weight:700;}
+.m-tab th.num,.m-tab td.num{text-align:right;}
+.m-tab td{padding:8px 10px;border-top:1px solid var(--sabbia);font-size:16px;}
+.m-tab tr:nth-child(even) td{background:#f8f2e8;}
+
+/* ---- pastiglie di stato ---- */
+.m-pill{font-weight:700;padding:2px 9px;border-radius:10px;display:inline-block;font-size:13.5px;}
+.m-pill.ok{background:#e7efdb;color:#4c5c2e;}
+.m-pill.medio{background:#f6ecd2;color:#8a6d1f;}
+.m-pill.alto{background:#f7ddd7;color:#a03222;}
+
+/* ---- bottoni ---- */
+.m-btn{display:inline-block;background:var(--rosso);color:#fff;text-decoration:none;
+  border:none;border-radius:12px;padding:12px 22px;font-size:15.5px;font-weight:700;
+  font-family:inherit;cursor:pointer;}
+.m-btn.chiaro{background:var(--panna);color:var(--crosta);border:1.5px solid var(--sabbia);}
+
+/* ---- note e avvisi ---- */
+.m-nota{margin-top:26px;background:var(--panna);border:1px solid var(--sabbia);
+  border-radius:12px;padding:14px 18px;font-size:14.5px;color:var(--grigio);line-height:1.6;}
+.m-buco{color:var(--rosso);font-size:12.5px;}
+.m-stima{color:var(--grigio);font-size:12px;font-style:italic;}
+
+/* ---- telefono ---- */
+@media(max-width:640px){
+  .m-hdr h1{font-size:22px;}
+  .m-hdr img{width:46px;height:46px;}
+  .m-tab td,.m-tab th{font-size:13px;padding:6px 6px;}
+}
