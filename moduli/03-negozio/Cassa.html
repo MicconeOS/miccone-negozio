@@ -701,6 +701,9 @@ VIEWS.closure = function(){
     recalc();
   };
   recalc();
+  // BUG FIX: arrivando dall'app Negozio si entra qui senza passare dalla home, e il fondo variabile
+  // del giorno non era ancora stato caricato: la busta veniva calcolata sul fondo fisso del negozio.
+  fondoOggi().then(f => { const el = document.getElementById("fondoOggi"); if (el) el.textContent = eur(f); recalc(); });
 
   document.getElementById("saveBtn").onclick = async ()=>{
     const {tot,pos,env,diff} = recalc();
@@ -1104,7 +1107,7 @@ function admCSV(){
   go("stores");
 })();
 </script>
-<a href="Negozio.html" style="position:fixed;left:14px;bottom:14px;background:#3E2A1E;color:#fff;
+<a href="Negozio-v2.html" style="position:fixed;left:14px;bottom:14px;background:#3E2A1E;color:#fff;
   text-decoration:none;border-radius:12px;padding:10px 16px;font-family:inherit;font-size:14px;z-index:99">← Negozio</a>
 </body>
 </html>
