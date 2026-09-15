@@ -35,6 +35,15 @@
 .allarme{background:#fbe7e3;border:1px solid #e9b8ae;border-radius:12px;padding:10px 14px;margin-bottom:12px;color:#8a3226;font-size:14px;}
 .allarme b{display:block;font-size:15px;margin-bottom:4px;}
 .vuoto{color:var(--grigio);font-size:14px;}
+/* accesso col PIN */
+.gate{max-width:420px;margin:30px auto;background:var(--panna);border:1px solid var(--sabbia);border-radius:16px;padding:22px;text-align:center;}
+.gate h2{margin:0 0 6px;color:var(--caffe);}
+.gate p{margin:0 0 14px;color:var(--grigio);font-size:14px;}
+.gate input{width:100%;font-size:28px;letter-spacing:8px;text-align:center;padding:10px;border:1px solid var(--sabbia);border-radius:12px;box-sizing:border-box;}
+.gate button{margin-top:12px;width:100%;background:var(--caffe);color:#FBF6EA;border:none;border-radius:12px;padding:12px;font-size:17px;font-weight:700;cursor:pointer;}
+.gate .err{color:var(--rosso);font-size:14px;min-height:20px;margin-top:8px;}
+.chi-sono{font-size:13px;color:var(--grigio);text-align:right;margin:-6px 0 10px;}
+.chi-sono a{color:var(--caffe);}
 @media (max-width:640px){.cats{grid-template-columns:repeat(2,1fr);}.manca ul{columns:1;}}
 </style>
 </head>
@@ -48,21 +57,7 @@
   <a href="Cassa.html">Cassa contanti</a>
 </nav>
 
-<div class="m-wrap">
-  <div class="apri">
-    <a href="Negozio-v2.html">📱 Apri l'app dei dipendenti<small>Da installare sull'iPad di ogni punto vendita. Entrano col nome (o PIN).</small></a>
-    <a class="secondo" href="Negozio-v2.html">🗓️ Vedi tutta la settimana<small>Entra come admin (Giulio / Amministrazione): compare la barra dei giorni.</small></a>
-  </div>
-  <div class="m-kpi" id="kpi"></div>
-  <div id="allarmi"></div>
-  <div id="sedi"></div>
-  <div class="m-nota">
-    <b>Come funziona.</b> I dipendenti usano l'iPad del punto vendita: scelgono il negozio, entrano col nome (o col PIN) e spuntano
-    le attività di mattina, pomeriggio e sera: procedure, produzione, HACCP e pulizie. Le temperature sopra i 6° avvisano il dipendente,
-    sopra gli 8° arriva una mail all'amministratore. Qui vedi in tempo reale chi ha fatto cosa, per negozio e per dipendente.
-    Le attività si cambiano da Madia, non dall'app.
-  </div>
-</div>
+<div class="m-wrap" id="pagina"></div>
 
 <script>
 const SB = "https://cdyfdwwfbfitfjazxses.supabase.co";
@@ -70,7 +65,9 @@ const KEY = "sb_publishable_SgdIMeJOXfRP9P3ndw0S7Q_4JFoJ2oq";
 async function rpc(n, a) {
   const r = await fetch(`${SB}/rest/v1/rpc/${n}`, {method:'POST',
     headers:{'Content-Type':'application/json', apikey:KEY, Authorization:'Bearer '+KEY}, body:JSON.stringify(a||{})});
-  return r.json();
+  const j = await r.json().catch(()=>null);
+  if (!r.ok) throw new Error((j && (j.message || j.error)) || ('Errore '+r.status));
+  return j;
 }
 const dIT = d => d.split('-').reverse().slice(0,2).join('/');
 const oraIT = ts => ts ? new Date(ts).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '';
@@ -78,46 +75,88 @@ const oraIT = ts => ts ? new Date(ts).toLocaleTimeString('it-IT',{hour:'2-digit'
 const sicuro = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pct = (f,p) => p ? Math.round(f/p*100) : 0;
 const CATS = [['procedure','Procedure'],['produzione','Produzione'],['haccp','HACCP'],['pulizie','Pulizie']];
+const SESS = 'madia_controllo_admin';   // {id, nome, pin, ts} — vale 12 ore su questo dispositivo
 
-(async function(){
-  const R = await rpc('cassa_report_dipendenti', {});
+function sessione(){ try{ const s=JSON.parse(localStorage.getItem(SESS)||'null'); if(s && s.pin && Date.now()-s.ts < 12*3600*1000) return s; }catch(e){} return null; }
+function esci(){ try{ localStorage.removeItem(SESS); }catch(e){} mostraGate(); }
+
+function mostraGate(msg){
+  document.getElementById('pagina').innerHTML = `
+    <div class="gate"><h2>🔒 Solo amministrazione</h2><p>Inserisci il PIN dell'amministratore per vedere la dashboard.</p>
+      <input id="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="6" placeholder="••••">
+      <button id="entra">Entra</button><div class="err" id="err">${msg||''}</div></div>`;
+  const inp = document.getElementById('pin'); inp.focus();
+  const vai = async () => {
+    const pin = inp.value.trim(); if (!pin) return;
+    document.getElementById('err').textContent = 'Controllo…';
+    try {
+      const stores = await rpc('cassa_stores', {});
+      const emps = await rpc('cassa_employees', {p_store: stores[0].id});
+      const admins = emps.filter(e => e.role === 'admin');
+      for (const a of admins) {
+        const r = await rpc('cassa_login', {p_employee: a.id, p_pin: pin});
+        if (r && r.id && !r.errore) {
+          localStorage.setItem(SESS, JSON.stringify({id:r.id, nome:r.name, pin, ts:Date.now()}));
+          return carica();
+        }
+      }
+      document.getElementById('err').textContent = 'PIN sbagliato'; inp.value=''; inp.focus();
+    } catch(e) { document.getElementById('err').textContent = 'Niente rete, riprova'; }
+  };
+  document.getElementById('entra').onclick = vai;
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') vai(); });
+}
+
+async function carica(){
+  const s = sessione(); if (!s) return mostraGate();
+  let R;
+  try { R = await rpc('cassa_report_dipendenti', {p_employee: s.id, p_pin: s.pin}); }
+  catch(e) { try{ localStorage.removeItem(SESS); }catch(_){} return mostraGate('Accesso scaduto o PIN cambiato: rientra'); }
   const giorni = R.giorni || [], dip = R.dipendenti || [], mancanti = R.mancanti_oggi || [], allarmi = R.allarmi || [];
   const oggi = new Date().toLocaleDateString('en-CA');
   const diOggi = giorni.filter(r => r.giorno === oggi);
-  const tot = giorni.reduce((s,r) => s + r.previste, 0), fat = giorni.reduce((s,r) => s + r.fatte, 0);
-
-  document.getElementById('kpi').innerHTML = `
-    <div><b>${pct(fat,tot)}%</b><span>completate negli ultimi 7 giorni</span></div>
-    <div><b>${fat}</b><span>attività spuntate</span></div>
-    <div><b>${diOggi.reduce((s,r)=>s+r.previste-r.fatte,0)}</b><span>ancora da fare oggi</span></div>
-    <div><b>${allarmi.length}</b><span>allarmi frigo (&gt;8°) in 7 giorni</span></div>`;
-
-  document.getElementById('allarmi').innerHTML = allarmi.length ? `<div class="allarme"><b>⚠️ Frigo sopra gli 8°</b>${
-    allarmi.map(a => `${dIT(a.giorno)} · ${sicuro(a.sede)} · <b style="display:inline">${sicuro(a.cosa)}</b> a ${a.valore}° (${sicuro(a.chi||'—')})`).join('<br>')}</div>` : '';
-
+  const tot = giorni.reduce((a,r) => a + r.previste, 0), fat = giorni.reduce((a,r) => a + r.fatte, 0);
   const sedi = [...new Set(giorni.map(r => r.sede))];
-  document.getElementById('sedi').innerHTML = sedi.map(sede => {
-    const righe = giorni.filter(r => r.sede === sede);
-    const o = righe.find(r => r.giorno === oggi) || {previste:0,fatte:0};
-    const p = pct(o.fatte, o.previste);
-    const dipOggi = dip.filter(d => d.sede === sede && d.giorno === oggi);
-    const mancaOggi = mancanti.filter(m => m.sede === sede);
-    const chiGiorno = g => dip.filter(d => d.sede === sede && d.giorno === g).map(d => `${sicuro(d.dipendente||'—')} ${d.fatte}`).join(' · ');
-    return `<h2>${sicuro(sede)}</h2>
-      <div class="sede">
-        <h3>Oggi: ${o.fatte} su ${o.previste} <span style="font-weight:400;font-size:14px;color:var(--grigio)">(${p}%)</span></h3>
-        <div class="barra ${p<50?'magra':''}"><i style="width:${p}%"></i></div>
-        <div class="cats">${CATS.map(([k,l]) => `<div class="cat">${l}<b>${o[k]||0}/${o[k+'_p']||0}</b><div class="mini"><i style="width:${pct(o[k]||0,o[k+'_p']||0)}%"></i></div></div>`).join('')}</div>
-        <div class="dip">${dipOggi.length ? dipOggi.map(d => `<span><b>${sicuro(d.dipendente||'—')}</b> ${d.fatte} fatte <small>· ${oraIT(d.ultima)}</small></span>`).join('')
-          : '<span class="vuoto">Oggi nessuno ha ancora spuntato.</span>'}</div>
-        ${mancaOggi.length ? `<div class="manca"><details><summary>Manca ancora oggi: ${mancaOggi.length}</summary><ul>${
-          mancaOggi.map(m => `<li>${m.momento} · ${sicuro(m.cosa)}</li>`).join('')}</ul></details></div>` : (o.previste ? '<div class="manca">✅ Giornata completa.</div>' : '')}
-        ${righe.filter(r => r.giorno !== oggi).map(r => `<div class="riga-g"><span class="g">${dIT(r.giorno)}</span>
-            <span class="n">${r.fatte}/${r.previste} ${r.fatte===r.previste&&r.previste>0?'✅':(r.fatte===0?'—':'⚠️')}</span>
-            <span class="chi">${chiGiorno(r.giorno) || 'nessuna spunta'}</span></div>`).join('')}
-      </div>`;
-  }).join('') || '<div class="vuoto">Nessun dato: le sedi non hanno attività attive.</div>';
-})();
+
+  document.getElementById('pagina').innerHTML = `
+    <div class="chi-sono">Sei ${sicuro(s.nome)} · <a href="#" id="esci">esci</a></div>
+    <div class="apri">
+      <a href="Negozio-v2.html">📱 Apri l'app dei dipendenti<small>Sugli iPad: Borgo con ?sede=borgo, Duomo con ?sede=duomo.</small></a>
+      <a class="secondo" href="Negozio-v2.html">🗓️ Vedi tutta la settimana<small>Entra come Giulio: compare la barra dei giorni.</small></a>
+    </div>
+    <div class="m-kpi">
+      <div><b>${pct(fat,tot)}%</b><span>completate negli ultimi 7 giorni</span></div>
+      <div><b>${fat}</b><span>attività spuntate</span></div>
+      <div><b>${diOggi.reduce((a,r)=>a+r.previste-r.fatte,0)}</b><span>ancora da fare oggi</span></div>
+      <div><b>${allarmi.length}</b><span>allarmi frigo (&gt;8°) in 7 giorni</span></div>
+    </div>
+    ${allarmi.length ? `<div class="allarme"><b>⚠️ Frigo sopra gli 8°</b>${allarmi.map(a => `${dIT(a.giorno)} · ${sicuro(a.sede)} · <b style="display:inline">${sicuro(a.cosa)}</b> a ${a.valore}° (${sicuro(a.chi||'—')})`).join('<br>')}</div>` : ''}
+    ${sedi.map(sede => {
+      const righe = giorni.filter(r => r.sede === sede);
+      const o = righe.find(r => r.giorno === oggi) || {previste:0,fatte:0};
+      const p = pct(o.fatte, o.previste);
+      const dipOggi = dip.filter(d => d.sede === sede && d.giorno === oggi);
+      const mancaOggi = mancanti.filter(m => m.sede === sede);
+      const chiGiorno = g => dip.filter(d => d.sede === sede && d.giorno === g).map(d => `${sicuro(d.dipendente||'—')} ${d.fatte}`).join(' · ');
+      return `<h2>${sicuro(sede)}</h2>
+        <div class="sede">
+          <h3>Oggi: ${o.fatte} su ${o.previste} <span style="font-weight:400;font-size:14px;color:var(--grigio)">(${p}%)</span></h3>
+          <div class="barra ${p<50?'magra':''}"><i style="width:${p}%"></i></div>
+          <div class="cats">${CATS.map(([k,l]) => `<div class="cat">${l}<b>${o[k]||0}/${o[k+'_p']||0}</b><div class="mini"><i style="width:${pct(o[k]||0,o[k+'_p']||0)}%"></i></div></div>`).join('')}</div>
+          <div class="dip">${dipOggi.length ? dipOggi.map(d => `<span><b>${sicuro(d.dipendente||'—')}</b> ${d.fatte} fatte <small>· ${oraIT(d.ultima)}</small></span>`).join('')
+            : '<span class="vuoto">Oggi nessuno ha ancora spuntato.</span>'}</div>
+          ${mancaOggi.length ? `<div class="manca"><details><summary>Manca ancora oggi: ${mancaOggi.length}</summary><ul>${mancaOggi.map(m => `<li>${m.momento} · ${sicuro(m.cosa)}</li>`).join('')}</ul></details></div>` : (o.previste ? '<div class="manca">✅ Giornata completa.</div>' : '')}
+          ${righe.filter(r => r.giorno !== oggi).map(r => `<div class="riga-g"><span class="g">${dIT(r.giorno)}</span>
+              <span class="n">${r.fatte}/${r.previste} ${r.fatte===r.previste&&r.previste>0?'✅':(r.fatte===0?'—':'⚠️')}</span>
+              <span class="chi">${chiGiorno(r.giorno) || 'nessuna spunta'}</span></div>`).join('')}
+        </div>`;
+    }).join('') || '<div class="vuoto">Nessun dato: le sedi non hanno attività attive.</div>'}
+    <div class="m-nota"><b>Come funziona.</b> I dipendenti usano l'iPad del punto vendita: entrano col nome e il loro PIN e spuntano
+      le attività di mattina, pomeriggio e sera. Le temperature sopra i 6° avvisano il dipendente, sopra gli 8° arriva una mail all'amministratore.
+      Qui vedi in tempo reale chi ha fatto cosa. Questa pagina e i suoi dati si aprono solo col PIN dell'amministratore.</div>`;
+  document.getElementById('esci').onclick = e => { e.preventDefault(); esci(); };
+}
+carica();
 </script>
 </body>
 </html>
