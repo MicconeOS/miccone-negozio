@@ -47,9 +47,12 @@ body{margin:0;font-family:'Miso','Trebuchet MS',sans-serif;background:var(--crem
 .momento .bar i.ko{background:var(--rosso)}
 .sez{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--crosta);font-weight:700;margin:16px 0 6px}
 .persona{background:#fff;border-radius:14px;padding:10px 12px;margin-bottom:8px}
-.persona .nome{display:flex;justify-content:space-between;align-items:baseline}
+.persona .nome{display:flex;justify-content:space-between;align-items:baseline;cursor:pointer;list-style:none}
+.persona .nome::-webkit-details-marker{display:none}
 .persona .nome b{font-size:19px}
 .persona .nome span{font-size:14px;color:var(--grigio)}
+.persona .nome i{font-style:normal;display:inline-block;transition:transform .15s;color:var(--crosta)}
+.persona[open] .nome i{transform:rotate(180deg)}
 .persona ul{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-size:14px}
 @media (max-width:1000px){.persona ul{grid-template-columns:1fr}}
 .persona li{display:flex;gap:6px;align-items:baseline;padding:2px 0;border-top:1px dashed var(--sabbia)}
@@ -170,10 +173,10 @@ function disegna(){
       <div class="momenti">${MOM.map(m => { const r = righe.filter(x => x.momento === m), f = r.filter(x => x.fatto).length, q = pct(f, r.length);
         return `<div class="momento"><div class="h">${m}</div><b>${f}/${r.length}</b><div class="bar"><i class="${(!eOggi && q<100)?'ko':''}" style="width:${q}%"></i></div></div>`; }).join('')}</div>
       <div class="sez">Chi ha fatto cosa</div>
-      ${persone.length ? persone.map(pz => `<div class="persona">
-          <div class="nome"><b>${sicuro(pz.chi)}</b><span>${pz.righe.length} attività · ultima ${oraIT(pz.righe[pz.righe.length-1].ora)}</span></div>
-          ${pz.righe.length > 8 ? `<ul>${pz.righe.slice(0,6).map(riga).join('')}</ul><details><summary>altre ${pz.righe.length-6}</summary><ul>${pz.righe.slice(6).map(riga).join('')}</ul></details>` : `<ul>${pz.righe.map(riga).join('')}</ul>`}
-        </div>`).join('') : `<div class="vuoto">${eOggi ? 'Nessuna spunta ancora oggi.' : 'Nessuna spunta quel giorno.'}</div>`}
+      ${persone.length ? persone.map(pz => `<details class="persona">
+          <summary class="nome"><b>${sicuro(pz.chi)}</b><span>${pz.righe.length} attività · ultima ${oraIT(pz.righe[pz.righe.length-1].ora)} <i>▾</i></span></summary>
+          <ul>${pz.righe.map(riga).join('')}</ul>
+        </details>`).join('') : `<div class="vuoto">${eOggi ? 'Nessuna spunta ancora oggi.' : 'Nessuna spunta quel giorno.'}</div>`}
       ${o.previste ? (manca.length ? `<div class="sez">${eOggi ? 'Da fare' : 'Non fatto'}</div><div class="dafare">
           <div class="dh"><b>${manca.length}</b><span>${MOM.map(m => { const n = manca.filter(x => x.momento === m).length; return n ? `${m} ${n}` : ''; }).filter(Boolean).join(' · ')}</span><button onclick="this.closest('.dafare').classList.toggle('aperto');this.textContent=this.closest('.dafare').classList.contains('aperto')?'chiudi':'vedi'">vedi</button></div>
           <div class="elenco">${MOM.map(m => { const v = manca.filter(x => x.momento === m); return v.length ? `<div class="mom"><b>${m}</b>${v.map(x => sicuro(x.cosa)).join(' · ')}</div>` : ''; }).join('')}</div>
