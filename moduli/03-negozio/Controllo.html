@@ -19,7 +19,7 @@ body{margin:0;font-family:'Miso','Trebuchet MS',sans-serif;background:var(--crem
 .top .sub{font-size:14px;color:#E8D5BD;margin-top:3px}
 .top a{color:#F0C061;font-size:14px;text-decoration:none}
 .giorni{display:flex;gap:6px;margin-top:12px;overflow-x:auto;padding-bottom:2px}
-.giorni button{flex:1;min-width:64px;border:none;border-radius:12px;padding:8px 4px;font:700 14px 'Miso',sans-serif;background:rgba(251,246,234,.14);color:#F6E9D6;cursor:pointer}
+.giorni button{flex:none;min-width:72px;border:none;border-radius:12px;padding:8px 4px;font:700 14px 'Miso',sans-serif;background:rgba(251,246,234,.14);color:#F6E9D6;cursor:pointer}
 .giorni button.on{background:#FBF6EA;color:#7B4D35}
 .giorni button small{display:block;font-weight:400;font-size:11px;opacity:.8}
 .wrap{max-width:1100px;margin:0 auto;padding:14px}
@@ -140,7 +140,8 @@ function mostraGate(msg){
 
 async function carica(){
   const s = sessione(); if (!s) return mostraGate();
-  try { R = await rpc('cassa_report_dipendenti', {p_employee: s.id, p_pin: s.pin}); }
+  const da = new Date(); da.setDate(da.getDate() - 13);   // 14 giorni: oggi e le due settimane precedenti
+  try { R = await rpc('cassa_report_dipendenti', {p_employee: s.id, p_pin: s.pin, p_da: da.toLocaleDateString('en-CA'), p_a: oggiISO()}); }
   catch(e) { try{ localStorage.removeItem(SESS); }catch(_){} return mostraGate('Accesso scaduto o PIN cambiato: rientra'); }
   disegna();
 }
@@ -181,7 +182,7 @@ function disegna(){
   const s = sessione(); if (!s) return mostraGate();
   const giorni = R.giorni || [], det = (R.dettaglio || []).filter(x => x.giorno === GIORNO), allarmi = (R.allarmi || []).filter(a => a.giorno === GIORNO);
   const sedi = [...new Set(giorni.map(r => r.sede))].sort((a,b) => (/duomo/i.test(b)?1:0) - (/duomo/i.test(a)?1:0) || a.localeCompare(b)); // Duomo prima
-  const listaGiorni = [...new Set(giorni.map(r => r.giorno))].sort().reverse().slice(0,7); // oggi a sinistra, poi indietro
+  const listaGiorni = [...new Set(giorni.map(r => r.giorno))].sort().reverse().slice(0,14); // oggi a sinistra, poi indietro (la barra scorre)
   const eOggi = GIORNO === oggiISO();
 
   const negozio = sede => {
