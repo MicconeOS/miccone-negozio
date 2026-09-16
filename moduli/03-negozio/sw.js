@@ -1,7 +1,7 @@
 // Service worker dell'app Negozio: tiene sull'iPad pagina, font e logo.
 // L'app si apre subito anche con rete lenta; i file si rinfrescano in sottofondo (stale-while-revalidate).
 // Le chiamate a Supabase non passano mai dalla cache.
-const VERSIONE = 'negozio-2026-09-16b';
+const VERSIONE = 'negozio-2026-09-16c';
 const SHELL = [
   './Negozio-v2.html',
   './Cassa.html',
@@ -19,6 +19,7 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET' || u.origin !== location.origin) return; // Supabase e tutto il resto: rete diretta
+  if (/Controllo\.html$/.test(u.pathname) || /\/controllo\/?$/.test(u.pathname)) return; // la dashboard admin è sempre fresca, mai dalla cache
   // una sola copia per file, senza la parte dopo il "?" (così ?sede=duomo e ?sede=borgo condividono la stessa pagina aggiornata)
   const chiave = new Request(u.origin + u.pathname);
   e.respondWith(caches.open(VERSIONE).then(async c => {
