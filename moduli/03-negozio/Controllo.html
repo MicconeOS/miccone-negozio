@@ -3,61 +3,84 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Negozio · controllo — Madia</title>
-<link rel="stylesheet" href="../../shared/madia.css">
+<title>Controllo negozi — Miccone</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Controllo">
+<meta name="theme-color" content="#3E2A1E">
 <style>
-.apri{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 16px;}
-.apri a{flex:1;min-width:220px;display:block;background:var(--caffe);color:#FBF6EA;text-decoration:none;border-radius:14px;padding:16px 18px;font-weight:700;font-size:17px;}
-.apri a.secondo{background:var(--panna);color:var(--caffe);border:1px solid var(--sabbia);}
-.apri a small{display:block;font-weight:400;font-size:13px;opacity:.85;margin-top:3px;}
-.sede{background:var(--panna);border:1px solid var(--sabbia);border-radius:14px;padding:14px 16px;margin-bottom:12px;}
-.sede h3{margin:0 0 4px;color:var(--caffe);font-size:19px;}
-.barra{height:12px;background:var(--sabbia);border-radius:7px;overflow:hidden;margin-top:8px;}
-.barra i{display:block;height:100%;background:var(--campagna);}
-.barra.magra i{background:var(--rosso);}
-.cats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;}
-.cat{background:#fff;border-radius:10px;padding:8px 10px;font-size:13px;}
-.cat b{display:block;font-size:16px;color:var(--caffe);}
-.cat .mini{height:6px;background:var(--sabbia);border-radius:4px;overflow:hidden;margin-top:5px;}
-.cat .mini i{display:block;height:100%;background:var(--campagna);}
-.dip{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
-.dip span{background:#fff;border:1px solid var(--sabbia);border-radius:20px;padding:6px 12px;font-size:14px;}
-.dip span b{color:var(--caffe);}
-.dip span small{color:var(--grigio);}
-.manca{margin-top:12px;font-size:13.5px;color:#7a3f2a;}
-.manca details summary{cursor:pointer;font-weight:700;color:var(--caffe);}
-.manca ul{margin:6px 0 0 18px;padding:0;columns:2;}
-.manca li{margin:2px 0;}
-.riga-g{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:15px;padding:7px 0;border-top:1px dashed var(--sabbia);}
-.riga-g .g{min-width:56px;font-weight:700;}
-.riga-g .n{min-width:70px;}
-.riga-g .chi{font-size:13px;color:var(--grigio);flex:1;text-align:right;}
-.allarme{background:#fbe7e3;border:1px solid #e9b8ae;border-radius:12px;padding:10px 14px;margin-bottom:12px;color:#8a3226;font-size:14px;}
-.allarme b{display:block;font-size:15px;margin-bottom:4px;}
-.vuoto{color:var(--grigio);font-size:14px;}
-/* accesso col PIN */
-.gate{max-width:420px;margin:30px auto;background:var(--panna);border:1px solid var(--sabbia);border-radius:16px;padding:22px;text-align:center;}
-.gate h2{margin:0 0 6px;color:var(--caffe);}
-.gate p{margin:0 0 14px;color:var(--grigio);font-size:14px;}
-.gate input{width:100%;font-size:28px;letter-spacing:8px;text-align:center;padding:10px;border:1px solid var(--sabbia);border-radius:12px;box-sizing:border-box;}
-.gate button{margin-top:12px;width:100%;background:var(--caffe);color:#FBF6EA;border:none;border-radius:12px;padding:12px;font-size:17px;font-weight:700;cursor:pointer;}
-.gate .err{color:var(--rosso);font-size:14px;min-height:20px;margin-top:8px;}
-.chi-sono{font-size:13px;color:var(--grigio);text-align:right;margin:-6px 0 10px;}
-.chi-sono a{color:var(--caffe);}
-@media (max-width:640px){.cats{grid-template-columns:repeat(2,1fr);}.manca ul{columns:1;}}
+@font-face{font-family:'Miso';src:url('../../shared/fonts/Miso-Regular.woff2') format('woff2');font-weight:400;}
+@font-face{font-family:'Miso';src:url('../../shared/fonts/Miso-Bold.woff2') format('woff2');font-weight:700;}
+:root{--caffe:#3E2A1E;--crosta:#7B4D35;--crema:#F4EEDF;--panna:#FBF7F0;--sabbia:#E6DACA;--grigio:#8A8178;--oro:#F0C061;--rosso:#D63A2B;--verde:#5fa06a;--verdino:#e6f1e7;--rossino:#fbe7e3}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:'Miso','Trebuchet MS',sans-serif;background:var(--crema);color:var(--caffe);-webkit-font-smoothing:antialiased}
+.top{background:linear-gradient(160deg,#7B4D35,#5A3722);color:#FBF6EA;padding:16px 18px 14px}
+.top .r1{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.top h1{margin:0;font-size:26px;line-height:1}
+.top .sub{font-size:14px;color:#E8D5BD;margin-top:3px}
+.top a{color:#F0C061;font-size:14px;text-decoration:none}
+.giorni{display:flex;gap:6px;margin-top:12px;overflow-x:auto;padding-bottom:2px}
+.giorni button{flex:1;min-width:64px;border:none;border-radius:12px;padding:8px 4px;font:700 14px 'Miso',sans-serif;background:rgba(251,246,234,.14);color:#F6E9D6;cursor:pointer}
+.giorni button.on{background:#FBF6EA;color:#7B4D35}
+.giorni button small{display:block;font-weight:400;font-size:11px;opacity:.8}
+.wrap{max-width:1100px;margin:0 auto;padding:14px}
+.allarme{background:var(--rossino);border:1px solid #e9b8ae;border-radius:14px;padding:10px 14px;margin:0 0 12px;color:#8a3226;font-size:15px}
+.allarme b{display:block;font-size:16px;margin-bottom:3px}
+.negozi{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:760px){.negozi{grid-template-columns:1fr}}
+.negozio{background:var(--panna);border-radius:18px;padding:16px;box-shadow:0 2px 10px rgba(62,42,30,.06)}
+.testa{display:flex;align-items:center;gap:14px}
+.ring{position:relative;width:86px;height:86px;flex:none}
+.ring svg{display:block}
+.ring .pct{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.ring .pct b{font-size:24px}
+.ring .pct span{font-size:12px;color:var(--grigio);margin-top:2px}
+.testa h2{margin:0;font-size:24px;line-height:1}
+.testa .stato{font-size:15px;margin-top:4px;color:var(--grigio)}
+.testa .stato.ok{color:var(--verde);font-weight:700}
+.testa .stato.ko{color:var(--rosso);font-weight:700}
+.momenti{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.momento{background:#fff;border-radius:12px;padding:8px 10px}
+.momento .h{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--grigio)}
+.momento b{display:block;font-size:18px;margin-top:2px}
+.momento .bar{height:6px;background:var(--sabbia);border-radius:4px;overflow:hidden;margin-top:6px}
+.momento .bar i{display:block;height:100%;background:var(--verde)}
+.momento .bar i.ko{background:var(--rosso)}
+.sez{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--crosta);font-weight:700;margin:16px 0 6px}
+.persona{background:#fff;border-radius:14px;padding:10px 12px;margin-bottom:8px}
+.persona .nome{display:flex;justify-content:space-between;align-items:baseline}
+.persona .nome b{font-size:19px}
+.persona .nome span{font-size:14px;color:var(--grigio)}
+.persona ul{list-style:none;margin:6px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:2px 10px;font-size:14px}
+@media (max-width:1000px){.persona ul{grid-template-columns:1fr}}
+.persona li{display:flex;gap:6px;align-items:baseline;padding:2px 0;border-top:1px dashed var(--sabbia)}
+.persona li .ora{color:var(--grigio);font-size:12px;min-width:38px}
+.persona li .t{color:var(--grigio);font-size:12px}
+.persona li .v{margin-left:auto;font-weight:700;font-size:13px;color:var(--verde)}
+.persona li .v.ko{color:var(--rosso)}
+.persona details summary{cursor:pointer;font-size:14px;color:var(--crosta);margin-top:6px}
+.manca{background:var(--rossino);border-radius:14px;padding:10px 12px;color:#8a3226}
+.manca .mh{display:flex;justify-content:space-between;font-weight:700;font-size:16px;cursor:pointer;list-style:none}
+.manca .mh span:last-child{font-weight:400;font-size:13px;color:#b0655a}
+.manca summary::-webkit-details-marker{display:none}
+.manca ul{list-style:none;margin:6px 0 0;padding:0;font-size:14px;columns:2;column-gap:14px}
+@media (max-width:1000px){.manca ul{columns:1}}
+.manca li{padding:2px 0;break-inside:avoid}
+.manca li small{color:#b0655a;text-transform:uppercase;font-size:11px;letter-spacing:.5px;margin-right:6px}
+.completa{background:var(--verdino);border-radius:14px;padding:12px;color:#2f6b3a;font-weight:700;font-size:16px;text-align:center}
+.vuoto{color:var(--grigio);font-size:14px;padding:6px 2px}
+.foot{margin:18px 0 30px;text-align:center;font-size:13px;color:var(--grigio)}
+.foot a{color:var(--crosta)}
+.gate{max-width:380px;margin:40px auto;background:var(--panna);border-radius:18px;padding:24px;text-align:center}
+.gate h2{margin:0 0 6px}
+.gate p{margin:0 0 14px;color:var(--grigio);font-size:14px}
+.gate input{width:100%;font-size:30px;letter-spacing:10px;text-align:center;padding:10px;border:1px solid var(--sabbia);border-radius:12px;font-family:inherit}
+.gate button{margin-top:12px;width:100%;background:var(--caffe);color:#FBF6EA;border:none;border-radius:12px;padding:13px;font:700 18px 'Miso',sans-serif;cursor:pointer}
+.gate .err{color:var(--rosso);font-size:14px;min-height:20px;margin-top:8px}
+.carico{text-align:center;color:var(--grigio);padding:40px}
 </style>
 </head>
-<body class="madia">
-<header class="m-hdr"><img src="../../shared/logo-tondo.png" alt="Miccone"><div>
-  <h1>Negozio</h1><div class="m-sot">Madia · dashboard dell'amministratore: chi ha fatto cosa, negozio per negozio</div>
-</div></header>
-<nav class="m-tabs">
-  <a href="Controllo.html" class="on">Controllo</a>
-  <a href="Negozio-v2.html">App dipendenti</a>
-  <a href="Cassa.html">Cassa contanti</a>
-</nav>
-
-<div class="m-wrap" id="pagina"></div>
+<body>
+<div id="pagina"><div class="carico">Carico…</div></div>
 
 <script>
 const SB = "https://cdyfdwwfbfitfjazxses.supabase.co";
@@ -69,20 +92,20 @@ async function rpc(n, a) {
   if (!r.ok) throw new Error((j && (j.message || j.error)) || ('Errore '+r.status));
   return j;
 }
-const dIT = d => d.split('-').reverse().slice(0,2).join('/');
 const oraIT = ts => ts ? new Date(ts).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '';
-// note e nomi arrivano dai dipendenti: mostrati come testo, mai come codice
 const sicuro = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pct = (f,p) => p ? Math.round(f/p*100) : 0;
-const CATS = [['procedure','Procedure'],['produzione','Produzione'],['haccp','HACCP'],['pulizie','Pulizie']];
+const MOM = ['mattina','pomeriggio','sera'];
 const SESS = 'madia_controllo_admin';   // {id, nome, pin, ts} — vale 12 ore su questo dispositivo
+const oggiISO = () => new Date().toLocaleDateString('en-CA');
+let R = null, GIORNO = oggiISO();
 
 function sessione(){ try{ const s=JSON.parse(localStorage.getItem(SESS)||'null'); if(s && s.pin && Date.now()-s.ts < 12*3600*1000) return s; }catch(e){} return null; }
 function esci(){ try{ localStorage.removeItem(SESS); }catch(e){} mostraGate(); }
 
 function mostraGate(msg){
   document.getElementById('pagina').innerHTML = `
-    <div class="gate"><h2>🔒 Solo amministrazione</h2><p>Inserisci il PIN dell'amministratore per vedere la dashboard.</p>
+    <div class="gate"><h2>🔒 Controllo negozi</h2><p>PIN dell'amministratore</p>
       <input id="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="6" placeholder="••••">
       <button id="entra">Entra</button><div class="err" id="err">${msg||''}</div></div>`;
   const inp = document.getElementById('pin'); inp.focus();
@@ -92,13 +115,9 @@ function mostraGate(msg){
     try {
       const stores = await rpc('cassa_stores', {});
       const emps = await rpc('cassa_employees', {p_store: stores[0].id});
-      const admins = emps.filter(e => e.role === 'admin');
-      for (const a of admins) {
+      for (const a of emps.filter(e => e.role === 'admin')) {
         const r = await rpc('cassa_login', {p_employee: a.id, p_pin: pin});
-        if (r && r.id && !r.errore) {
-          localStorage.setItem(SESS, JSON.stringify({id:r.id, nome:r.name, pin, ts:Date.now()}));
-          return carica();
-        }
+        if (r && r.id && !r.errore) { localStorage.setItem(SESS, JSON.stringify({id:r.id, nome:r.name, pin, ts:Date.now()})); return carica(); }
       }
       document.getElementById('err').textContent = 'PIN sbagliato'; inp.value=''; inp.focus();
     } catch(e) { document.getElementById('err').textContent = 'Niente rete, riprova'; }
@@ -109,54 +128,72 @@ function mostraGate(msg){
 
 async function carica(){
   const s = sessione(); if (!s) return mostraGate();
-  let R;
   try { R = await rpc('cassa_report_dipendenti', {p_employee: s.id, p_pin: s.pin}); }
   catch(e) { try{ localStorage.removeItem(SESS); }catch(_){} return mostraGate('Accesso scaduto o PIN cambiato: rientra'); }
-  const giorni = R.giorni || [], dip = R.dipendenti || [], mancanti = R.mancanti_oggi || [], allarmi = R.allarmi || [];
-  const oggi = new Date().toLocaleDateString('en-CA');
-  const diOggi = giorni.filter(r => r.giorno === oggi);
-  const tot = giorni.reduce((a,r) => a + r.previste, 0), fat = giorni.reduce((a,r) => a + r.fatte, 0);
-  const sedi = [...new Set(giorni.map(r => r.sede))];
+  disegna();
+}
+function vaiGiorno(iso){ GIORNO = iso; disegna(); window.scrollTo(0,0); }
+
+function etichettaGiorno(iso){
+  const d = new Date(iso+'T00:00'), o = oggiISO();
+  const ieri = new Date(); ieri.setDate(ieri.getDate()-1);
+  if (iso === o) return ['Oggi', d.toLocaleDateString('it-IT',{day:'numeric',month:'short'})];
+  if (iso === ieri.toLocaleDateString('en-CA')) return ['Ieri', d.toLocaleDateString('it-IT',{day:'numeric',month:'short'})];
+  return [d.toLocaleDateString('it-IT',{weekday:'short'}), d.toLocaleDateString('it-IT',{day:'numeric',month:'short'})];
+}
+
+function ring(p){
+  const dash = 2*Math.PI*36, off = dash - dash*p/100, col = p>=100?'#5fa06a':(p>=50?'#F0C061':'#D63A2B');
+  return `<div class="ring"><svg viewBox="0 0 86 86" width="86" height="86"><circle cx="43" cy="43" r="36" fill="none" stroke="#E6DACA" stroke-width="9"/>
+    <circle cx="43" cy="43" r="36" fill="none" stroke="${col}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${dash}" stroke-dashoffset="${off}" transform="rotate(-90 43 43)"/></svg>
+    <div class="pct"><b>${p}%</b><span>fatto</span></div></div>`;
+}
+
+function disegna(){
+  const s = sessione(); if (!s) return mostraGate();
+  const giorni = R.giorni || [], det = (R.dettaglio || []).filter(x => x.giorno === GIORNO), allarmi = (R.allarmi || []).filter(a => a.giorno === GIORNO);
+  const sedi = [...new Set(giorni.map(r => r.sede))].sort((a,b) => (/duomo/i.test(b)?1:0) - (/duomo/i.test(a)?1:0) || a.localeCompare(b)); // Duomo prima
+  const listaGiorni = [...new Set(giorni.map(r => r.giorno))].sort().reverse().slice(0,7); // oggi a sinistra, poi indietro
+  const eOggi = GIORNO === oggiISO();
+
+  const negozio = sede => {
+    const o = giorni.find(r => r.sede === sede && r.giorno === GIORNO) || {previste:0,fatte:0};
+    const p = pct(o.fatte, o.previste);
+    const righe = det.filter(x => x.sede === sede);
+    const fatte = righe.filter(x => x.fatto), manca = righe.filter(x => !x.fatto);
+    const persone = [...new Set(fatte.map(x => x.chi || '—'))].map(chi => ({chi, righe: fatte.filter(x => (x.chi||'—') === chi)})).sort((a,b) => b.righe.length - a.righe.length);
+    const stato = !o.previste ? '' : p >= 100 ? '<div class="stato ok">✅ Giornata completa</div>' : (eOggi ? `<div class="stato">${o.previste - o.fatte} ancora da fare</div>` : `<div class="stato ko">${o.previste - o.fatte} non fatte</div>`);
+    const riga = x => `<li><span class="ora">${oraIT(x.ora)}</span><span>${sicuro(x.cosa)}</span><span class="t">${x.momento}</span>${x.valore!=null?`<span class="v ${x.valore>8?'ko':''}">${x.valore}°</span>`:''}</li>`;
+    return `<div class="negozio">
+      <div class="testa">${ring(p)}<div><h2>${sicuro(sede)}</h2><div class="stato">${o.fatte} su ${o.previste} attività</div>${stato}</div></div>
+      <div class="momenti">${MOM.map(m => { const r = righe.filter(x => x.momento === m), f = r.filter(x => x.fatto).length, q = pct(f, r.length);
+        return `<div class="momento"><div class="h">${m}</div><b>${f}/${r.length}</b><div class="bar"><i class="${(!eOggi && q<100)?'ko':''}" style="width:${q}%"></i></div></div>`; }).join('')}</div>
+      <div class="sez">Chi ha fatto cosa</div>
+      ${persone.length ? persone.map(pz => `<div class="persona">
+          <div class="nome"><b>${sicuro(pz.chi)}</b><span>${pz.righe.length} attività · ultima ${oraIT(pz.righe[pz.righe.length-1].ora)}</span></div>
+          ${pz.righe.length > 8 ? `<ul>${pz.righe.slice(0,6).map(riga).join('')}</ul><details><summary>altre ${pz.righe.length-6}</summary><ul>${pz.righe.slice(6).map(riga).join('')}</ul></details>` : `<ul>${pz.righe.map(riga).join('')}</ul>`}
+        </div>`).join('') : `<div class="vuoto">${eOggi ? 'Nessuna spunta ancora oggi.' : 'Nessuna spunta quel giorno.'}</div>`}
+      ${o.previste ? (manca.length ? `<div class="sez">${eOggi ? 'Manca ancora' : 'Non fatto'}</div><div class="manca"><details ${manca.length <= 10 ? 'open' : ''}><summary class="mh"><span>${manca.length} attività</span><span>${MOM.map(m => { const n = manca.filter(x => x.momento === m).length; return n ? `${m} ${n}` : ''; }).filter(Boolean).join(' · ')}</span></summary>
+          <ul>${manca.map(x => `<li><small>${x.momento}</small>${sicuro(x.cosa)}</li>`).join('')}</ul></details></div>` : '<div class="completa">🏆 Tutto fatto</div>') : ''}
+    </div>`;
+  };
 
   document.getElementById('pagina').innerHTML = `
-    <div class="chi-sono">Sei ${sicuro(s.nome)} · <a href="#" id="esci">esci</a></div>
-    <div class="apri">
-      <a href="Negozio-v2.html">📱 Apri l'app dei dipendenti<small>Sugli iPad: Borgo con ?sede=borgo, Duomo con ?sede=duomo.</small></a>
-      <a class="secondo" href="Negozio-v2.html">🗓️ Vedi tutta la settimana<small>Entra come Giulio: compare la barra dei giorni.</small></a>
+    <div class="top">
+      <div class="r1"><div><h1>Controllo negozi</h1><div class="sub">Chi ha fatto cosa, Duomo e Borgo</div></div><a href="#" id="esci">${sicuro(s.nome)} · esci</a></div>
+      <div class="giorni">${listaGiorni.map(g => { const [a,b] = etichettaGiorno(g); return `<button class="${g===GIORNO?'on':''}" onclick="vaiGiorno('${g}')">${a}<small>${b}</small></button>`; }).join('')}</div>
     </div>
-    <div class="m-kpi">
-      <div><b>${pct(fat,tot)}%</b><span>completate negli ultimi 7 giorni</span></div>
-      <div><b>${fat}</b><span>attività spuntate</span></div>
-      <div><b>${diOggi.reduce((a,r)=>a+r.previste-r.fatte,0)}</b><span>ancora da fare oggi</span></div>
-      <div><b>${allarmi.length}</b><span>allarmi frigo (&gt;8°) in 7 giorni</span></div>
-    </div>
-    ${allarmi.length ? `<div class="allarme"><b>⚠️ Frigo sopra gli 8°</b>${allarmi.map(a => `${dIT(a.giorno)} · ${sicuro(a.sede)} · <b style="display:inline">${sicuro(a.cosa)}</b> a ${a.valore}° (${sicuro(a.chi||'—')})`).join('<br>')}</div>` : ''}
-    ${sedi.map(sede => {
-      const righe = giorni.filter(r => r.sede === sede);
-      const o = righe.find(r => r.giorno === oggi) || {previste:0,fatte:0};
-      const p = pct(o.fatte, o.previste);
-      const dipOggi = dip.filter(d => d.sede === sede && d.giorno === oggi);
-      const mancaOggi = mancanti.filter(m => m.sede === sede);
-      const chiGiorno = g => dip.filter(d => d.sede === sede && d.giorno === g).map(d => `${sicuro(d.dipendente||'—')} ${d.fatte}`).join(' · ');
-      return `<h2>${sicuro(sede)}</h2>
-        <div class="sede">
-          <h3>Oggi: ${o.fatte} su ${o.previste} <span style="font-weight:400;font-size:14px;color:var(--grigio)">(${p}%)</span></h3>
-          <div class="barra ${p<50?'magra':''}"><i style="width:${p}%"></i></div>
-          <div class="cats">${CATS.map(([k,l]) => `<div class="cat">${l}<b>${o[k]||0}/${o[k+'_p']||0}</b><div class="mini"><i style="width:${pct(o[k]||0,o[k+'_p']||0)}%"></i></div></div>`).join('')}</div>
-          <div class="dip">${dipOggi.length ? dipOggi.map(d => `<span><b>${sicuro(d.dipendente||'—')}</b> ${d.fatte} fatte <small>· ${oraIT(d.ultima)}</small></span>`).join('')
-            : '<span class="vuoto">Oggi nessuno ha ancora spuntato.</span>'}</div>
-          ${mancaOggi.length ? `<div class="manca"><details><summary>Manca ancora oggi: ${mancaOggi.length}</summary><ul>${mancaOggi.map(m => `<li>${m.momento} · ${sicuro(m.cosa)}</li>`).join('')}</ul></details></div>` : (o.previste ? '<div class="manca">✅ Giornata completa.</div>' : '')}
-          ${righe.filter(r => r.giorno !== oggi).map(r => `<div class="riga-g"><span class="g">${dIT(r.giorno)}</span>
-              <span class="n">${r.fatte}/${r.previste} ${r.fatte===r.previste&&r.previste>0?'✅':(r.fatte===0?'—':'⚠️')}</span>
-              <span class="chi">${chiGiorno(r.giorno) || 'nessuna spunta'}</span></div>`).join('')}
-        </div>`;
-    }).join('') || '<div class="vuoto">Nessun dato: le sedi non hanno attività attive.</div>'}
-    <div class="m-nota"><b>Come funziona.</b> I dipendenti usano l'iPad del punto vendita: entrano col nome e il loro PIN e spuntano
-      le attività di mattina, pomeriggio e sera. Le temperature sopra i 6° avvisano il dipendente, sopra gli 8° arriva una mail all'amministratore.
-      Qui vedi in tempo reale chi ha fatto cosa. Questa pagina e i suoi dati si aprono solo col PIN dell'amministratore.</div>`;
+    <div class="wrap">
+      ${allarmi.length ? `<div class="allarme"><b>⚠️ Frigo sopra gli 8°</b>${allarmi.map(a => `${sicuro(a.sede)} · ${sicuro(a.cosa)} a ${a.valore}° (${sicuro(a.chi||'—')})`).join('<br>')}</div>` : ''}
+      <div class="negozi">${sedi.map(negozio).join('') || '<div class="vuoto">Nessun dato.</div>'}</div>
+      <div class="foot">Aggiornato ${new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})} · <a href="#" id="ricarica">ricarica</a> · <a href="Negozio-v2.html">app dipendenti</a> · <a href="Cassa.html">cassa</a></div>
+    </div>`;
   document.getElementById('esci').onclick = e => { e.preventDefault(); esci(); };
+  document.getElementById('ricarica').onclick = e => { e.preventDefault(); carica(); };
 }
 carica();
+// si aggiorna da sola ogni 5 minuti quando è aperta
+setInterval(() => { if (sessione() && R) carica(); }, 5*60*1000);
 </script>
 </body>
 </html>
