@@ -1088,8 +1088,8 @@ function admCSV(){
       S.stores = await rpc("cassa_stores");
       const fresh = S.stores.find(x => x.id === S.store.id);
       if (fresh) S.store = fresh;
-      go(vistaChiesta); return;
-    } catch(e) {}
+    } catch(e) { S.stores = S.stores || [S.store]; }   // rete lenta o assente: uso il negozio della sessione, senza rimandare alla scelta del negozio
+    go(vistaChiesta); return;
   }
   if (S.store && S.employee && S.pin!=null){
     try{

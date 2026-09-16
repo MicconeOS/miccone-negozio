@@ -366,14 +366,16 @@ function briocheRow(x,done,cat){
 }
 // attività che aprono direttamente l'app Cassa (meno passaggi)
 const APRE={'fondo cassa':'morning','conteggio contanti':'closure'};
-function apreCassa(vista,cosa){
+function apreCassa(vista,cosa,el){
   salvaSessione();
   try{localStorage.setItem('negozio_ritorno',JSON.stringify({cosa,vista,ts:Date.now()}));}catch(e){}
-  location.href='Cassa.html?v='+Date.now()+'#'+vista;
+  // risposta immediata al tocco, così si vede che sta aprendo la Cassa anche se la rete è lenta
+  try{const s=el&&el.querySelector('.s');if(s)s.textContent='Apro la Cassa…';}catch(e){}
+  setTimeout(()=>{location.assign('Cassa.html?v='+Date.now()+'#'+vista);},30);
 }
 function apreRow(x,done,cat,vista){
   return `<div class="row ${done?'ok':''}">
-    <div class="head" style="display:flex;align-items:center;gap:16px;flex:1;cursor:pointer" onclick="apreCassa('${vista}','${x.cosa.replace(/'/g,"\\'")}')">
+    <div class="head" style="display:flex;align-items:center;gap:16px;flex:1;cursor:pointer" onclick="apreCassa('${vista}','${x.cosa.replace(/'/g,"\\'")}',this)">
       <div class="ic ${cat}">💶</div>
       <div class="tx"><div class="c">${x.cosa}</div><div class="s">${done?'fatto ✓':'tocca: apre la Cassa →'}</div></div>
     </div>
