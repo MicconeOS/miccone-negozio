@@ -45,6 +45,14 @@ body{margin:0;font-family:'Miso','Trebuchet MS',sans-serif;background:var(--crem
 .momento .bar{height:6px;background:var(--sabbia);border-radius:4px;overflow:hidden;margin-top:6px}
 .momento .bar i{display:block;height:100%;background:var(--verde)}
 .momento .bar i.ko{background:var(--rosso)}
+.cassa{background:#fff;border-radius:14px;padding:4px 12px}
+.cassa .cr{display:flex;gap:10px;align-items:flex-start;padding:8px 0}
+.cassa .cr + .cr{border-top:1px dashed var(--sabbia)}
+.cassa .ci{font-size:20px;line-height:1.2}
+.cassa .cr b{font-size:16px}
+.cassa .cr small{display:block;font-size:13px;color:var(--grigio);margin-top:2px;line-height:1.35}
+.cassa .cr.ok b{color:#2f6b3a}
+.cassa .cr.ko b{color:var(--rosso)}
 .sez{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--crosta);font-weight:700;margin:16px 0 6px}
 .persona{background:#fff;border-radius:14px;padding:10px 12px;margin-bottom:8px}
 .persona .nome{display:flex;justify-content:space-between;align-items:baseline;cursor:pointer;list-style:none}
@@ -153,6 +161,22 @@ function ring(p){
     <div class="pct"><b>${p}%</b><span>fatto</span></div></div>`;
 }
 
+const eur = n => (n==null||isNaN(+n)) ? '—' : (+n).toLocaleString('it-IT',{style:'currency',currency:'EUR',minimumFractionDigits:(Math.round(+n*100)%100)?2:0,maximumFractionDigits:2});
+const segno = n => (+n>0?'+':'') + eur(n);
+// la cassa del giorno per un negozio: fondo del mattino e chiusura della sera
+function cassaCard(sede){
+  const righe = (R.cassa || []).filter(x => x.sede === sede && x.giorno === GIORNO);
+  const m = righe.find(x => x.tipo === 'mattina'), c = righe.find(x => x.tipo === 'chiusura');
+  const eOggi = GIORNO === oggiISO(), ora = new Date().getHours();
+  const okDiff = d => Math.abs(+d) <= 0.5;
+  const rigaM = m
+    ? `<div class="cr ${okDiff(m.differenza)?'ok':'ko'}"><span class="ci">🌅</span><div><b>Fondo del mattino ${okDiff(m.differenza)?'giusto':segno(m.differenza)}</b><small>contati ${eur(m.contati)} su ${eur(m.attesi)} attesi · ${sicuro(m.chi||'—')} ${oraIT(m.ora)}${m.note?' · '+sicuro(m.note):''}</small></div></div>`
+    : `<div class="cr ${eOggi && ora < 10 ? '' : 'ko'}"><span class="ci">🌅</span><div><b>Fondo del mattino ${eOggi && ora < 10 ? 'non ancora controllato' : 'non controllato'}</b></div></div>`;
+  const rigaC = c
+    ? `<div class="cr ${okDiff(c.differenza)?'ok':'ko'}"><span class="ci">🌙</span><div><b>Chiusura ${okDiff(c.differenza)?'in pari':segno(c.differenza)}</b><small>contanti ${eur(c.contati)} · POS ${eur(c.pos)} · busta ${c.busta_n?'n. '+sicuro(c.busta_n)+' ':''}${eur(c.busta)} · fondo lasciato ${eur(c.attesi)} · ${sicuro(c.chi||'—')} ${oraIT(c.ora)}${c.note?' · '+sicuro(c.note):''}</small></div></div>`
+    : `<div class="cr ${eOggi ? '' : 'ko'}"><span class="ci">🌙</span><div><b>Chiusura ${eOggi ? 'non ancora fatta' : 'non fatta'}</b></div></div>`;
+  return `<div class="cassa">${rigaM}${rigaC}</div>`;
+}
 function disegna(){
   const s = sessione(); if (!s) return mostraGate();
   const giorni = R.giorni || [], det = (R.dettaglio || []).filter(x => x.giorno === GIORNO), allarmi = (R.allarmi || []).filter(a => a.giorno === GIORNO);
@@ -172,6 +196,8 @@ function disegna(){
       <div class="testa">${ring(p)}<div><h2>${sicuro(sede)}</h2><div class="stato">${o.fatte} su ${o.previste} attività</div>${stato}</div></div>
       <div class="momenti">${MOM.map(m => { const r = righe.filter(x => x.momento === m), f = r.filter(x => x.fatto).length, q = pct(f, r.length);
         return `<div class="momento"><div class="h">${m}</div><b>${f}/${r.length}</b><div class="bar"><i class="${(!eOggi && q<100)?'ko':''}" style="width:${q}%"></i></div></div>`; }).join('')}</div>
+      <div class="sez">Cassa</div>
+      ${cassaCard(sede)}
       <div class="sez">Chi ha fatto cosa</div>
       ${persone.length ? persone.map(pz => `<details class="persona">
           <summary class="nome"><b>${sicuro(pz.chi)}</b><span>${pz.righe.length} attività · ultima ${oraIT(pz.righe[pz.righe.length-1].ora)} <i>▾</i></span></summary>
