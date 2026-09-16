@@ -14,6 +14,7 @@
 body{background:var(--crema);color:var(--scuro)}
 .wrap{max-width:820px;margin:0 auto;min-height:100vh;position:relative}
 .hide{display:none!important}
+.futuro{margin:10px 16px 0;padding:10px 14px;border-radius:12px;background:#FBEBC9;color:#7B4D35;font-weight:700;font-size:15px;text-align:center}
 
 /* LOGIN */
 .lg{min-height:100vh;background:linear-gradient(160deg,#7B4D35,#5A3722);display:flex;flex-direction:column;align-items:center;color:#FBF6EA;padding:8vh 36px 40px}
@@ -105,9 +106,29 @@ function salvaSessione(){
   try{localStorage.setItem('miccone_sessione',JSON.stringify({store:S.store,emp:S.emp,pin:S.pin||'',data:S.data||null,momento:S.momento||null,ts:Date.now()}));}catch(e){}
 }
 let STORES=[];
+// Cache leggera (memoria + localStorage): il cambio persona è istantaneo, i dati si rinfrescano in sottofondo.
+const CACHE={emps:{},giornate:{},pending:{}};
+const FRESCA_EMPS=10*60*1000, FRESCA_GIORNATA=5*60*1000, FRESCA_STORES=24*3600*1000;
+function cacheLS(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(k)||'null');localStorage.setItem(k,JSON.stringify(v));}catch(e){return null;}}
+function keyG(storeId,iso){return storeId+'|'+iso;}
+function giornataInCache(storeId,iso){const c=CACHE.giornate[keyG(storeId,iso)];return !!(c&&Date.now()-c.ts<FRESCA_GIORNATA);}
+async function caricaGiornata(storeId,iso,fresca){
+  const k=keyG(storeId,iso), c=CACHE.giornate[k];
+  if(!fresca&&c&&Date.now()-c.ts<FRESCA_GIORNATA)return c.g;
+  if(CACHE.pending[k])return CACHE.pending[k];
+  const p=rpc('cassa_giornata',{p_store:storeId,p_giorno:iso}).then(g=>{CACHE.giornate[k]={g,ts:Date.now()};return g;}).finally(()=>{delete CACHE.pending[k];});
+  CACHE.pending[k]=p;return p;
+}
+// mentre la persona sceglie il nome e scrive il PIN, la giornata di oggi è già in viaggio
+function prefetchGiornata(){if(S.store)caricaGiornata(S.store.id,oggi()).catch(()=>{});}
+// una giornata arrivata dalla rete sostituisce quella a schermo solo se non c'è una spunta in corso
+function applicaGiornata(g,iso){if(S.emp&&S.giornata&&S.data===iso&&Date.now()-(S._ultimaSpunta||0)>5000){S.giornata=g;render();}}
 async function init(){
   try{
-    const reali=await rpc('cassa_stores',{}).catch(()=>[]);
+    // i negozi cambiano quasi mai: li tengo sull'iPad per un giorno e li rinfresco in sottofondo
+    let sc=cacheLS('miccone_stores'); let reali=(sc&&sc.list)||null;
+    if(!reali||Date.now()-(sc.ts||0)>FRESCA_STORES){reali=await rpc('cassa_stores',{}).catch(()=>reali||[]);cacheLS('miccone_stores',{list:reali,ts:Date.now()});}
+    else rpc('cassa_stores',{}).then(l=>cacheLS('miccone_stores',{list:l,ts:Date.now()})).catch(()=>{});
     // le Palestre (negozi di prova) si vedono solo in locale su Madia o con ?palestra nell'indirizzo, mai online
     const IN_PROVA=/^(localhost|127\.0\.0\.1)$/.test(location.hostname)||/palestra/.test(location.search);
     const test=IN_PROVA?[{id:'00000000-0000-4000-a000-000000000002',name:'🧪 Palestra Duomo',slug:'palestra-duomo'},
@@ -117,7 +138,7 @@ async function init(){
     const sedeParam=(new URLSearchParams(location.search).get('sede')||'').toLowerCase();
     const slugFisso={borgo:'borgo-ticino',duomo:'piazza-duomo'}[sedeParam]||sedeParam;
     const fisso=STORES.find(s=>s.slug===slugFisso);
-    if(fisso){S.store=fisso;S.sedeFissa=true;}
+    if(fisso){S.store=fisso;S.sedeFissa=true;prefetchGiornata();}
     const ses=leggiSessione();
     if(ses&&(!fisso||(ses.store&&ses.store.id===fisso.id))){S.emp=ses.emp;if(ses.store)S.store=ses.store;S.pin=ses.pin||'';S._rip={data:ses.data,momento:ses.momento};return entra();}
     if(fisso)return schermataLogin();
@@ -132,12 +153,16 @@ function schermataStore(){
 }
 function pickStore(i){S.store=STORES[i];schermataLogin();}
 async function schermataLogin(){
-  const emps=await rpc('cassa_employees',{p_store:S.store.id}).catch(()=>[]);
-  app().innerHTML=`<div class="lg">
+  const sid=S.store.id, c=CACHE.emps[sid];
+  const disegna=emps=>{app().innerHTML=`<div class="lg" id="lgNomi">
     <img class="badge" src="../../shared/logo-tondo.png" onerror="this.style.display='none'">
     <h1>Ciao! Chi sei?</h1><div class="sub">${S.store.name.replace('🧪 ','')} · tocca il tuo nome</div>
     <div class="people">${emps.map(e=>`<button onclick='pickPerson(${JSON.stringify(e).replace(/'/g,"&#39;")})'>${e.name}<small>${e.role==='admin'?'responsabile':'in servizio'}</small></button>`).join('')||'<div class="sub">Nessun dipendente. Beppe li aggiunge da Madia.</div>'}</div>
-    ${S.sedeFissa?'':'<button onclick="schermataStore()" style="margin-top:18px;background:none;border:none;color:#D9C2AE;font-size:18px">← cambia negozio</button>'}</div>`;
+    ${S.sedeFissa?'':'<button onclick="schermataStore()" style="margin-top:18px;background:none;border:none;color:#D9C2AE;font-size:18px">← cambia negozio</button>'}</div>`;};
+  const rinfresca=()=>rpc('cassa_employees',{p_store:sid}).then(l=>{CACHE.emps[sid]={list:l,ts:Date.now()};if(!S.emp&&document.getElementById('lgNomi'))disegna(l);return l;});
+  if(c&&Date.now()-c.ts<FRESCA_EMPS){disegna(c.list);rinfresca().catch(()=>{});}   // nomi subito dalla cache, aggiornati in sottofondo
+  else{const l=await rinfresca().catch(()=>[]);if(!document.getElementById('lgNomi'))disegna(l);}
+  prefetchGiornata();
 }
 // Primo ingresso senza PIN: il dipendente lo sceglie (4-6 cifre, ripetuto) e da lì in poi serve sempre.
 async function pickPerson(e){
@@ -187,7 +212,8 @@ async function entra(){
   const rip=S._rip||{};S._rip=null;
   S.data=(S.emp&&S.emp.role==='admin'&&/^\d{4}-\d{2}-\d{2}$/.test(rip.data||''))?rip.data:oggi();
   salvaSessione();
-  S.giornata=await rpc('cassa_giornata',{p_store:S.store.id,p_giorno:S.data});
+  const daCache=giornataInCache(S.store.id,S.data);
+  S.giornata=await caricaGiornata(S.store.id,S.data);
   // ritorno dall'app Cassa: segna fatta la voce che ha aperto la Cassa
   try{const f=JSON.parse(localStorage.getItem('negozio_fatto')||'null');
     if(f&&Date.now()-f.ts<3600*1000){const t=S.giornata.attivita.find(a=>a.cosa===f.cosa);
@@ -198,6 +224,7 @@ async function entra(){
   S.momento=['mattina','pomeriggio','sera'].includes(rip.momento)?rip.momento:(ora<12?'mattina':ora<18?'pomeriggio':'sera');
   salvaSessione();
   render();
+  if(daCache){const iso=S.data;caricaGiornata(S.store.id,iso,true).then(g=>applicaGiornata(g,iso)).catch(()=>{});} // era in cache: rinfresco in sottofondo
 }
 function oggi(){return new Date().toLocaleDateString('en-CA');}
 function settimanaGiorni(){
@@ -210,10 +237,13 @@ let _seqGiorno=0;
 async function cambiaGiorno(iso){
   const mio=++_seqGiorno;
   S.data=iso;salvaSessione();render(); // mostra subito "carico…" sul giorno nuovo
-  const g=await rpc('cassa_giornata',{p_store:S.store.id,p_giorno:iso});
+  const daCache=giornataInCache(S.store.id,iso);
+  const g=await caricaGiornata(S.store.id,iso);
   if(mio!==_seqGiorno)return; // nel frattempo è stato scelto un altro giorno: ignora questa risposta
   S.giornata=g;render();
+  if(daCache)caricaGiornata(S.store.id,iso,true).then(g2=>{if(mio===_seqGiorno)applicaGiornata(g2,iso);}).catch(()=>{});
 }
+function giornoFuturo(){return (S.data||oggi())>oggi();}
 function statoFase(m){const a=S.giornata.attivita.filter(x=>x.momento===m);return{tot:a.length,fatti:a.filter(x=>x.fatto).length};}
 function render(){
   const g=S.giornata, isAdmin=!!(S.emp&&S.emp.role==='admin');
@@ -279,6 +309,7 @@ function render(){
   </div>
   ${isAdmin?`<div class="giorni" style="display:flex;gap:6px;padding:12px 16px 2px;background:#F4EEDF">${giorni.map(d=>`<button onclick="cambiaGiorno('${d.iso}')" style="flex:1;border:none;border-radius:12px;padding:9px 0;font:700 15px 'Miso',sans-serif;cursor:pointer;background:${d.iso===(S.data||oggi())?'#7B4D35':'#EADFCA'};color:${d.iso===(S.data||oggi())?'#FBF6EA':'#8a7458'}">${d.lab}</button>`).join('')}</div>`:''}
   <div class="fasi">${fasi.map(m=>{const s=statoFase(m);const cls=s.tot&&s.fatti===s.tot?'done':(m===S.momento?'on':'');return `<button class="fase ${cls}" onclick="vaiA('${m}')"><div class="h">${m.toUpperCase()}</div><div class="n">${s.fatti}/${s.tot}</div></button>`}).join('')}</div>
+  ${giornoFuturo()?'<div class="futuro">📅 Giorno futuro: puoi guardare, le spunte si fanno il giorno stesso</div>':''}
   <div class="list">${caricando?'<div class="loading">Carico la giornata…</div>':(lista||'<div class="loading">Niente da fare in questo momento 🎉</div>')}</div>
   <div class="foot">${fatti===tot?'🏆 Giornata completa, grande!':(momentiFatti>0?`💪 ${momentiFatti}/3 obiettivi — continua così!`:(pct>=50?`🔥 ${pct}% fatto, spingi fino in fondo!`:'🔔 Quello che non spunti entro sera lo vede Giulio'))}</div>`;
 }
@@ -375,17 +406,19 @@ function esciTurno(){try{localStorage.removeItem('miccone_sessione');}catch(e){}
 function vaiA(m){S.momento=m;salvaSessione();render();}
 // La spunta si salva sul giorno che stai guardando (S.data) e si resta su quel giorno.
 async function spunta(id,val){
-  const x=S.giornata.attivita.find(a=>a.id===id);x.fatto=val;render();
+  if(giornoFuturo()){alert('Questo giorno non è ancora arrivato: le spunte si fanno il giorno stesso.');return;}
+  const x=S.giornata.attivita.find(a=>a.id===id);x.fatto=val;S._ultimaSpunta=Date.now();render();
   try{await rpc('cassa_task_spunta',{p_task:id,p_employee:S.emp.id,p_fatto:val,p_giorno:S.data||oggi()});}catch(e){}
 }
 const SOGLIA_ALLARME=8; // gradi: sopra questa temperatura parte la mail all'amministratore
 const SOGLIA_AVVISO=6;  // gradi: sopra questa l'app avverte di controllare il frigo e riferire al responsabile
 async function chiediTemp(id){
+  if(giornoFuturo()){alert('Questo giorno non è ancora arrivato: le temperature si segnano il giorno stesso.');return;}
   const x=S.giornata.attivita.find(a=>a.id===id);
   const v=prompt(`${x.cosa} — che temperatura leggi? (gradi)`,x.valore!=null?x.valore:'');
   if(v===null||v==='')return;
   const n=parseFloat(String(v).replace(',','.'));if(isNaN(n))return;
-  x.fatto=true;x.valore=n;render();
+  x.fatto=true;x.valore=n;S._ultimaSpunta=Date.now();render();
   try{await rpc('cassa_task_spunta',{p_task:id,p_employee:S.emp.id,p_fatto:true,p_valore:n,p_giorno:S.data||oggi()});}catch(e){}
   if(n>SOGLIA_ALLARME){allarmeFrigo(x,n);alert(`⚠️ ${x.cosa} a ${n}°: troppo caldo!\nControlla il frigo e riferisci al tuo responsabile.\nHo avvisato anche l'amministratore via mail.`);}
   else if(n>SOGLIA_AVVISO){alert(`⚠️ ${x.cosa} a ${n}°.\nControlla il frigo e riferisci al tuo responsabile.`);}
@@ -397,4 +430,6 @@ async function allarmeFrigo(x,n){
   }catch(e){}
 }
 init();
+// Sull'iPad pagina, font e logo restano salvati: l'app si apre subito anche con rete lenta (non in locale su Madia).
+if('serviceWorker' in navigator&&(!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)||/[?&]sw\b/.test(location.search))){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 </script></body></html>
