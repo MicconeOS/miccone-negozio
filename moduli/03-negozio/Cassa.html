@@ -547,8 +547,8 @@ VIEWS.home = async function(){
 
   document.getElementById("statusLine").textContent = "Situazione di oggi:";
   const isAdmin = S.employee.role === "admin";
-  // conteggio cieco: differenze e quadrature solo per l'amministrazione
-  document.getElementById("chips").innerHTML = isAdmin ? `
+  // la quadratura la vedono tutti i dipendenti (Beppe, 16/9: "non solo l'amministrazione")
+  document.getElementById("chips").innerHTML = true ? `
     <span class="chip ${morningDone ? (Math.abs(Number(st.morning.difference))<0.005?"ok":"bad") : "todo"}">
       ${morningDone ? (Math.abs(Number(st.morning.difference))<0.005 ? "✓ Fondo confermato" : "⚠ Fondo con differenza "+eur(st.morning.difference)) : "○ Fondo da confermare"}</span>
     <span class="chip ${closureDone ? (Math.abs(Number(st.closure.difference))<0.005?"ok":"bad") : "todo"}" style="margin-left:6px">
@@ -626,7 +626,7 @@ VIEWS.closure = function(){
     </div>
     <div class="card">
       <h2>Cassa</h2>
-      ${S.employee.role==="admin" ? `<div class="field">
+      ${true ? `<div class="field">
         <label>Contanti battuti oggi dal sistema di cassa</label>
         <div class="money-input"><input id="posTotal" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"></div>
       </div>` : `<input id="posTotal" type="hidden" value="">
@@ -643,7 +643,7 @@ VIEWS.closure = function(){
       <div class="sumrow big"><span class="lbl">Totale contato</span><span class="val" id="sumTot">€ 0,00</span></div>
       <div class="sumrow"><span class="lbl">Fondo cassa da lasciare oggi</span><span class="val" id="fondoOggi">${eur(FONDO_OGGI ?? S.store.float_target)}</span></div>
       <div class="sumrow"><span class="lbl">Da mettere in busta</span><span class="val" id="sumEnv">€ 0,00</span></div>
-      ${S.employee.role==="admin" ? `<div class="sumrow"><span class="lbl">Fondo di partenza stamattina</span><span class="val" id="fondoStart">—</span></div>
+      ${true ? `<div class="sumrow"><span class="lbl">Fondo di partenza stamattina</span><span class="val" id="fondoStart">—</span></div>
       <div class="sumrow"><span class="lbl">Contanti battuti in cassa</span><span class="val" id="sumPos">€ 0,00</span></div>
       <div id="verdict"></div>` : `<span id="fondoStart" style="display:none"></span><span id="sumPos" style="display:none"></span><span id="verdict" style="display:none"></span>`}
       <div class="envelope">
@@ -685,7 +685,7 @@ VIEWS.closure = function(){
     document.getElementById("envAmt").textContent = eur(Math.max(env,0));
     const v = document.getElementById("verdict");
     // il campo incasso esiste solo per l'amministrazione: per il negozio basta il conteggio
-    const posEntered = S.employee.role==="admin" ? document.getElementById("posTotal").value !== "" : true;
+    const posEntered = document.getElementById("posTotal").value !== "";
     if (!posEntered || tot===0){
       v.innerHTML = `<div class="verdict warn"><span class="big">🧮</span> Conta il contante e inserisci l'incasso di cassa</div>`;
     } else if (env < 0){
@@ -714,7 +714,7 @@ VIEWS.closure = function(){
   document.getElementById("saveBtn").onclick = async ()=>{
     const {tot,pos,env,diff} = recalc();
     if (Math.abs(diff)>=0.005 && !document.getElementById("notes").value.trim()){
-      if(S.employee.role==="admin" && !confirm(`C'è una differenza di ${eur(diff)}. Vuoi registrare comunque senza aggiungere una nota?`)) return;
+      if(!confirm(`C'è una differenza di ${eur(diff)}. Vuoi registrare comunque senza aggiungere una nota?`)) return;
     }
     const btn = document.getElementById("saveBtn");
     btn.disabled = true; btn.textContent = "Salvo…";
@@ -745,11 +745,11 @@ VIEWS.closureDone = function(row){
   })();
   app.innerHTML = `<div class="wrap">${topbar()}
     <div class="card center">
-      <div style="font-size:52px;margin:8px 0">${S.employee.role==="admin" ? (ok?"✅":"⚠️") : "✅"}</div>
+      <div style="font-size:52px;margin:8px 0">${ok?"✅":"⚠️"}</div>
       <h2>Chiusura registrata</h2>
       <div class="sub">${weekdayLC(row.closure_date).replace(/^./,c=>c.toUpperCase())} ${dateIT(row.closure_date)} · ${esc(S.store.name)}</div>
       <div class="sumrow"><span class="lbl">Totale contato</span><span class="val">${eur(row.total_counted)}</span></div>
-      ${S.employee.role==="admin" ? `<div class="sumrow"><span class="lbl">Fondo di partenza</span><span class="val">${eur(row.float_start)}</span></div>
+      ${true ? `<div class="sumrow"><span class="lbl">Fondo di partenza</span><span class="val">${eur(row.float_start)}</span></div>
       <div class="sumrow"><span class="lbl">Contanti battuti in cassa</span><span class="val">${eur(row.pos_cash_total)}</span></div>
       <div class="sumrow"><span class="lbl">Quadratura</span><span class="val" style="color:${ok?"var(--green)":"var(--red)"}">${ok?"OK":eur(row.difference)}</span></div>` : ``}
       <div class="sumrow"><span class="lbl">Numero della busta</span><span class="val" id="nBusta">—</span></div>
@@ -771,7 +771,7 @@ VIEWS.morning = async function(){
   const today = todayISO();
   let st = S.status;
   try{ st = await rpc("cassa_status",{p_employee:S.employee.id,p_pin:S.pin,p_store:S.store.id,p_date:today}); S.status=st; }catch(e){}
-  const ADMIN = S.employee.role === "admin";
+  const ADMIN = true;   // il confronto col fondo atteso lo vedono tutti (Beppe, 16/9)
   const expected = st && st.previous_closure ? Number(st.previous_closure.float_target) : Number(S.store.float_target);
   const prevDate = st && st.previous_closure ? st.previous_closure.closure_date : null;
   const already = st && st.morning;
@@ -824,7 +824,7 @@ VIEWS.morning = async function(){
         p_employee:S.employee.id,p_pin:S.pin,p_store:S.store.id,p_date:today,
         p_float_counted:r.v, p_notes:notes||null
       });
-      toast(S.employee.role==="admin" ? (Math.abs(r.diff)<0.005 ? "Fondo cassa confermato ✓" : "Registrato con differenza — l'amministrazione lo vedrà.") : "Registrato ✓ grazie");
+      toast(Math.abs(r.diff)<0.005 ? "Fondo cassa confermato ✓" : "Registrato con differenza: l'amministrazione lo vedrà.");
       if(tornaInNegozio()) return;
       go("home");
     }catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent="Conferma fondo cassa"; }
