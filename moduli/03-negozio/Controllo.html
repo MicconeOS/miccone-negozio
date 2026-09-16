@@ -58,14 +58,15 @@ body{margin:0;font-family:'Miso','Trebuchet MS',sans-serif;background:var(--crem
 .persona li .v{margin-left:auto;font-weight:700;font-size:13px;color:var(--verde)}
 .persona li .v.ko{color:var(--rosso)}
 .persona details summary{cursor:pointer;font-size:14px;color:var(--crosta);margin-top:6px}
-.manca{background:var(--rossino);border-radius:14px;padding:10px 12px;color:#8a3226}
-.manca .mh{display:flex;justify-content:space-between;font-weight:700;font-size:16px;cursor:pointer;list-style:none}
-.manca .mh span:last-child{font-weight:400;font-size:13px;color:#b0655a}
-.manca summary::-webkit-details-marker{display:none}
-.manca ul{list-style:none;margin:6px 0 0;padding:0;font-size:14px;columns:2;column-gap:14px}
-@media (max-width:1000px){.manca ul{columns:1}}
-.manca li{padding:2px 0;break-inside:avoid}
-.manca li small{color:#b0655a;text-transform:uppercase;font-size:11px;letter-spacing:.5px;margin-right:6px}
+.dafare{background:#fff;border-radius:14px;padding:10px 12px}
+.dafare .dh{display:flex;align-items:center;gap:10px}
+.dafare .dh b{font-size:22px;color:var(--rosso)}
+.dafare .dh span{flex:1;font-size:14px;color:var(--grigio)}
+.dafare .dh button{border:none;background:var(--crema);color:var(--crosta);border-radius:10px;padding:6px 12px;font:700 14px 'Miso',sans-serif;cursor:pointer}
+.dafare .elenco{display:none;margin-top:8px;font-size:14px;line-height:1.5;color:var(--caffe)}
+.dafare.aperto .elenco{display:block}
+.dafare .mom{padding:6px 0;border-top:1px dashed var(--sabbia)}
+.dafare .mom b{display:block;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--grigio);margin-bottom:2px}
 .completa{background:var(--verdino);border-radius:14px;padding:12px;color:#2f6b3a;font-weight:700;font-size:16px;text-align:center}
 .vuoto{color:var(--grigio);font-size:14px;padding:6px 2px}
 .foot{margin:18px 0 30px;text-align:center;font-size:13px;color:var(--grigio)}
@@ -173,8 +174,10 @@ function disegna(){
           <div class="nome"><b>${sicuro(pz.chi)}</b><span>${pz.righe.length} attività · ultima ${oraIT(pz.righe[pz.righe.length-1].ora)}</span></div>
           ${pz.righe.length > 8 ? `<ul>${pz.righe.slice(0,6).map(riga).join('')}</ul><details><summary>altre ${pz.righe.length-6}</summary><ul>${pz.righe.slice(6).map(riga).join('')}</ul></details>` : `<ul>${pz.righe.map(riga).join('')}</ul>`}
         </div>`).join('') : `<div class="vuoto">${eOggi ? 'Nessuna spunta ancora oggi.' : 'Nessuna spunta quel giorno.'}</div>`}
-      ${o.previste ? (manca.length ? `<div class="sez">${eOggi ? 'Manca ancora' : 'Non fatto'}</div><div class="manca"><details ${manca.length <= 10 ? 'open' : ''}><summary class="mh"><span>${manca.length} attività</span><span>${MOM.map(m => { const n = manca.filter(x => x.momento === m).length; return n ? `${m} ${n}` : ''; }).filter(Boolean).join(' · ')}</span></summary>
-          <ul>${manca.map(x => `<li><small>${x.momento}</small>${sicuro(x.cosa)}</li>`).join('')}</ul></details></div>` : '<div class="completa">🏆 Tutto fatto</div>') : ''}
+      ${o.previste ? (manca.length ? `<div class="sez">${eOggi ? 'Da fare' : 'Non fatto'}</div><div class="dafare">
+          <div class="dh"><b>${manca.length}</b><span>${MOM.map(m => { const n = manca.filter(x => x.momento === m).length; return n ? `${m} ${n}` : ''; }).filter(Boolean).join(' · ')}</span><button onclick="this.closest('.dafare').classList.toggle('aperto');this.textContent=this.closest('.dafare').classList.contains('aperto')?'chiudi':'vedi'">vedi</button></div>
+          <div class="elenco">${MOM.map(m => { const v = manca.filter(x => x.momento === m); return v.length ? `<div class="mom"><b>${m}</b>${v.map(x => sicuro(x.cosa)).join(' · ')}</div>` : ''; }).join('')}</div>
+        </div>` : '<div class="completa">🏆 Tutto fatto</div>') : ''}
     </div>`;
   };
 
