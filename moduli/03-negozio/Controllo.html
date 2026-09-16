@@ -56,6 +56,9 @@ body{margin:0;font-family:'Miso','Trebuchet MS',sans-serif;background:var(--crem
 .cassa .cr small{display:block;font-size:13px;color:var(--grigio);margin-top:2px;line-height:1.35}
 .cassa .cr.ok b{color:#2f6b3a}
 .cassa .cr.ko b{color:var(--rosso)}
+.cassa .cr.tagli small{color:var(--caffe)}
+.cassa .cr.tagli small b{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--grigio);margin-right:4px}
+.cassa .cr.tagli small i{font-style:normal;color:var(--grigio)}
 .sez{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--crosta);font-weight:700;margin:16px 0 6px}
 .persona{background:#fff;border-radius:14px;padding:10px 12px;margin-bottom:8px}
 .persona .nome{display:flex;justify-content:space-between;align-items:baseline;cursor:pointer;list-style:none}
@@ -179,7 +182,16 @@ function cassaCard(sede){
   const rigaC = c
     ? `<div class="cr ${okDiff(c.differenza)?'ok':'ko'}"><span class="ci">🌙</span><div><b>Chiusura ${okDiff(c.differenza)?'in pari':segno(c.differenza)}</b><small>contati ${eur(c.contati)} = partenza ${eur(c.partenza)} + incasso contanti ${eur(c.pos)}${okDiff(c.differenza)?'':' '+segno(c.differenza)} · busta ${c.busta_n?'n. '+sicuro(c.busta_n)+' ':''}${eur(c.busta)} · lasciati ${eur(c.attesi)} · ${sicuro(c.chi||'—')} ${oraIT(c.ora)}${c.note?' · '+sicuro(c.note):''}</small></div></div>`
     : `<div class="cr ${eOggi ? '' : 'ko'}"><span class="ci">🌙</span><div><b>Chiusura ${eOggi ? 'non ancora fatta' : 'non fatta'}</b></div></div>`;
-  return `<div class="cassa">${rigaM}${rigaC}</div>`;
+  // i tagli contati alla chiusura: banconote e monete, solo quelli presenti
+  let tagli = '';
+  if (c && c.tagli) {
+    const t = c.tagli, fmt = d => (+d >= 1 ? (+d) + ' €' : Math.round(+d*100) + ' c');
+    const lista = Object.keys(t).map(d => [+d, +t[d]]).filter(([d,q]) => q > 0).sort((a,b) => b[0]-a[0]);
+    const ban = lista.filter(([d]) => d >= 5), mon = lista.filter(([d]) => d < 5);
+    const riga = (nome, arr) => arr.length ? `<div><b>${nome}</b> ${arr.map(([d,q]) => q + '×' + fmt(d)).join(' · ')} <i>= ${eur(arr.reduce((s,[d,q]) => s + d*q, 0))}</i></div>` : '';
+    tagli = `<div class="cr tagli"><span class="ci">🪙</span><div><small>${riga('Banconote', ban)}${riga('Monete', mon)}</small></div></div>`;
+  }
+  return `<div class="cassa">${rigaM}${rigaC}${tagli}</div>`;
 }
 function disegna(){
   const s = sessione(); if (!s) return mostraGate();
