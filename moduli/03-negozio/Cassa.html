@@ -643,8 +643,9 @@ VIEWS.closure = function(){
       <div class="sumrow big"><span class="lbl">Totale contato</span><span class="val" id="sumTot">€ 0,00</span></div>
       <div class="sumrow"><span class="lbl">Fondo cassa da lasciare oggi</span><span class="val" id="fondoOggi">${eur(FONDO_OGGI ?? S.store.float_target)}</span></div>
       <div class="sumrow"><span class="lbl">Da mettere in busta</span><span class="val" id="sumEnv">€ 0,00</span></div>
-      ${S.employee.role==="admin" ? `<div class="sumrow"><span class="lbl">Contanti battuti in cassa</span><span class="val" id="sumPos">€ 0,00</span></div>
-      <div id="verdict"></div>` : `<span id="sumPos" style="display:none"></span><span id="verdict" style="display:none"></span>`}
+      ${S.employee.role==="admin" ? `<div class="sumrow"><span class="lbl">Fondo di partenza stamattina</span><span class="val" id="fondoStart">—</span></div>
+      <div class="sumrow"><span class="lbl">Contanti battuti in cassa</span><span class="val" id="sumPos">€ 0,00</span></div>
+      <div id="verdict"></div>` : `<span id="fondoStart" style="display:none"></span><span id="sumPos" style="display:none"></span><span id="verdict" style="display:none"></span>`}
       <div class="envelope">
         <div class="cap">Metti il contante nella busta</div>
         <div class="day">${weekdayOf(today)}</div>
@@ -658,6 +659,11 @@ VIEWS.closure = function(){
 
   // fondo variabile del giorno: arriva dal server dopo il primo disegno, quindi va riletto a ogni calcolo
   const floatT = () => Number(FONDO_OGGI ?? S.store.float_target);
+  // fondo con cui la cassa è partita stamattina (conteggio del mattino, altrimenti quello lasciato ieri sera):
+  // la quadratura è contato = partenza + contanti incassati. La busta invece è contato - fondo da lasciare.
+  const floatStart = () => Number((S.status && S.status.float_start != null) ? S.status.float_start : (S.status && S.status.morning ? S.status.morning.float_counted : (S.status && S.status.previous_closure ? S.status.previous_closure.float_target : S.store.float_target)));
+  (async () => { if (!S.status || S.status.float_start == null) { try { S.status = await rpc("cassa_status",{p_employee:S.employee.id,p_pin:S.pin,p_store:S.store.id,p_date:today}); } catch(e) {} }
+    const el = document.getElementById("fondoStart"); if (el) el.textContent = eur(floatStart()); if (typeof recalc === "function") recalc(); })();
   function recalc(){
     if (!document.querySelector(".den")) return {};
     let tot = 0;
@@ -672,7 +678,7 @@ VIEWS.closure = function(){
     tot = Math.round(tot*100)/100;
     const pos = Math.round((parseFloat(document.getElementById("posTotal").value)||0)*100)/100;
     const env = Math.round((tot - floatT())*100)/100;
-    const diff = Math.round((tot - floatT() - pos)*100)/100;
+    const diff = Math.round((tot - floatStart() - pos)*100)/100;
     document.getElementById("sumTot").textContent = eur(tot);
     document.getElementById("sumEnv").textContent = eur(Math.max(env,0));
     document.getElementById("sumPos").textContent = eur(pos);
@@ -685,9 +691,9 @@ VIEWS.closure = function(){
     } else if (env < 0){
       v.innerHTML = `<div class="verdict bad"><span class="big">✕</span> Il contante (${eur(tot)}) è meno del fondo cassa da lasciare (${eur(floatT())})</div>`;
     } else if (Math.abs(diff) < 0.005){
-      v.innerHTML = `<div class="verdict ok"><span class="big">✓</span> Cassa quadrata: conta e incasso corrispondono</div>`;
+      v.innerHTML = `<div class="verdict ok"><span class="big">✓</span> Cassa quadrata: ${eur(floatStart())} di partenza + ${eur(pos)} incassati = ${eur(tot)}</div>`;
     } else {
-      v.innerHTML = `<div class="verdict bad"><span class="big">⚠</span> Differenza di ${eur(diff)} (${diff>0?"eccedenza":"ammanco"} rispetto alla cassa)</div>`;
+      v.innerHTML = `<div class="verdict bad"><span class="big">⚠</span> Differenza di ${eur(diff)} (${diff>0?"eccedenza":"ammanco"}): dovevi trovare ${eur(Math.round((floatStart()+pos)*100)/100)}, cioè ${eur(floatStart())} di partenza + ${eur(pos)} incassati</div>`;
     }
     document.getElementById("saveBtn").disabled = !(posEntered && tot>0 && env>=0);
     return {tot,pos,env,diff};
@@ -743,7 +749,8 @@ VIEWS.closureDone = function(row){
       <h2>Chiusura registrata</h2>
       <div class="sub">${weekdayLC(row.closure_date).replace(/^./,c=>c.toUpperCase())} ${dateIT(row.closure_date)} · ${esc(S.store.name)}</div>
       <div class="sumrow"><span class="lbl">Totale contato</span><span class="val">${eur(row.total_counted)}</span></div>
-      ${S.employee.role==="admin" ? `<div class="sumrow"><span class="lbl">Contanti battuti in cassa</span><span class="val">${eur(row.pos_cash_total)}</span></div>
+      ${S.employee.role==="admin" ? `<div class="sumrow"><span class="lbl">Fondo di partenza</span><span class="val">${eur(row.float_start)}</span></div>
+      <div class="sumrow"><span class="lbl">Contanti battuti in cassa</span><span class="val">${eur(row.pos_cash_total)}</span></div>
       <div class="sumrow"><span class="lbl">Quadratura</span><span class="val" style="color:${ok?"var(--green)":"var(--red)"}">${ok?"OK":eur(row.difference)}</span></div>` : ``}
       <div class="sumrow"><span class="lbl">Numero della busta</span><span class="val" id="nBusta">—</span></div>
       <div class="envelope">

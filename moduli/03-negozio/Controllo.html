@@ -173,7 +173,7 @@ function cassaCard(sede){
     ? `<div class="cr ${okDiff(m.differenza)?'ok':'ko'}"><span class="ci">🌅</span><div><b>Fondo del mattino ${okDiff(m.differenza)?'giusto':segno(m.differenza)}</b><small>contati ${eur(m.contati)} su ${eur(m.attesi)} attesi · ${sicuro(m.chi||'—')} ${oraIT(m.ora)}${m.note?' · '+sicuro(m.note):''}</small></div></div>`
     : `<div class="cr ${eOggi && ora < 10 ? '' : 'ko'}"><span class="ci">🌅</span><div><b>Fondo del mattino ${eOggi && ora < 10 ? 'non ancora controllato' : 'non controllato'}</b></div></div>`;
   const rigaC = c
-    ? `<div class="cr ${okDiff(c.differenza)?'ok':'ko'}"><span class="ci">🌙</span><div><b>Chiusura ${okDiff(c.differenza)?'in pari':segno(c.differenza)}</b><small>contanti ${eur(c.contati)} · POS ${eur(c.pos)} · busta ${c.busta_n?'n. '+sicuro(c.busta_n)+' ':''}${eur(c.busta)} · fondo lasciato ${eur(c.attesi)} · ${sicuro(c.chi||'—')} ${oraIT(c.ora)}${c.note?' · '+sicuro(c.note):''}</small></div></div>`
+    ? `<div class="cr ${okDiff(c.differenza)?'ok':'ko'}"><span class="ci">🌙</span><div><b>Chiusura ${okDiff(c.differenza)?'in pari':segno(c.differenza)}</b><small>contati ${eur(c.contati)} = partenza ${eur(c.partenza)} + incasso contanti ${eur(c.pos)}${okDiff(c.differenza)?'':' '+segno(c.differenza)} · busta ${c.busta_n?'n. '+sicuro(c.busta_n)+' ':''}${eur(c.busta)} · lasciati ${eur(c.attesi)} · ${sicuro(c.chi||'—')} ${oraIT(c.ora)}${c.note?' · '+sicuro(c.note):''}</small></div></div>`
     : `<div class="cr ${eOggi ? '' : 'ko'}"><span class="ci">🌙</span><div><b>Chiusura ${eOggi ? 'non ancora fatta' : 'non fatta'}</b></div></div>`;
   return `<div class="cassa">${rigaM}${rigaC}</div>`;
 }
