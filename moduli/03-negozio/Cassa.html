@@ -627,8 +627,9 @@ VIEWS.closure = function(){
     <div class="card">
       <h2>Cassa</h2>
       ${true ? `<div class="field">
-        <label>Contanti battuti oggi dal sistema di cassa</label>
+        <label>Incasso in contanti dallo scontrino di chiusura del registratore</label>
         <div class="money-input"><input id="posTotal" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"></div>
+        <div class="hint" style="margin-top:6px">È il totale "contanti" stampato dal registratore di cassa, <b>non</b> quello che hai contato nel cassetto: il conteggio l'hai già fatto qui sopra.</div>
       </div>` : `<input id="posTotal" type="hidden" value="">
       <div class="field"><label>Conteggio in autonomia</label>
         <div style="font-size:14.5px;color:var(--muted,#8a7d6e);line-height:1.5">Conta con calma e scrivi quello che trovi davvero.
@@ -690,6 +691,9 @@ VIEWS.closure = function(){
       v.innerHTML = `<div class="verdict warn"><span class="big">🧮</span> Conta il contante e inserisci l'incasso di cassa</div>`;
     } else if (env < 0){
       v.innerHTML = `<div class="verdict bad"><span class="big">✕</span> Il contante (${eur(tot)}) è meno del fondo cassa da lasciare (${eur(floatT())})</div>`;
+    } else if (floatStart() > 10 && Math.abs(pos - tot) < 3){
+      // errore classico: nel campo incasso viene scritto il contato del cassetto (fondo compreso) invece dello scontrino del registratore
+      v.innerHTML = `<div class="verdict bad"><span class="big">⚠</span> L'incasso inserito (${eur(pos)}) è uguale a quello che hai contato: sembra il totale del cassetto, non lo scontrino. Nel cassetto c'è anche il fondo di partenza (${eur(floatStart())}). Controlla il totale contanti sullo scontrino di chiusura del registratore.</div>`;
     } else if (Math.abs(diff) < 0.005){
       v.innerHTML = `<div class="verdict ok"><span class="big">✓</span> Cassa quadrata: ${eur(floatStart())} di partenza + ${eur(pos)} incassati = ${eur(tot)}</div>`;
     } else {
