@@ -594,6 +594,7 @@ VIEWS.closure = function(){
     if (typeof recalc === "function") recalc();
   });
   if (!S.employee) return go("stores");
+  { const d = new Date(); if (d.getHours()*60 + d.getMinutes() < 21*60 + 30 && S.employee.role !== "admin") { toast("La chiusura di cassa si fa dalle 21:30 in poi.", true); return go("home"); } }
   const today = todayISO();
   const prev = (S.status && S.status.closure) || null;
   const counts = {};
@@ -690,7 +691,8 @@ VIEWS.closure = function(){
     if (!posEntered || tot===0){
       v.innerHTML = `<div class="verdict warn"><span class="big">🧮</span> Conta il contante e inserisci l'incasso di cassa</div>`;
     } else if (env < 0){
-      v.innerHTML = `<div class="verdict bad"><span class="big">✕</span> Il contante (${eur(tot)}) è meno del fondo cassa da lasciare (${eur(floatT())})</div>`;
+      // meno contante del fondo previsto: si lascia tutto in cassa e la busta è vuota (il server fa lo stesso)
+      v.innerHTML = `<div class="verdict warn"><span class="big">ℹ️</span> Il contante (${eur(tot)}) è meno del fondo previsto (${eur(floatT())}): lascia tutto in cassa, stasera la busta è vuota.</div>`;
     } else if (floatStart() > 10 && Math.abs(pos - tot) < 3){
       // errore classico: nel campo incasso viene scritto il contato del cassetto (fondo compreso) invece dello scontrino del registratore
       v.innerHTML = `<div class="verdict bad"><span class="big">⚠</span> L'incasso inserito (${eur(pos)}) è uguale a quello che hai contato: sembra il totale del cassetto, non lo scontrino. Nel cassetto c'è anche il fondo di partenza (${eur(floatStart())}). Controlla il totale contanti sullo scontrino di chiusura del registratore.</div>`;
@@ -699,7 +701,8 @@ VIEWS.closure = function(){
     } else {
       v.innerHTML = `<div class="verdict bad"><span class="big">⚠</span> Differenza di ${eur(diff)} (${diff>0?"eccedenza":"ammanco"}): dovevi trovare ${eur(Math.round((floatStart()+pos)*100)/100)}, cioè ${eur(floatStart())} di partenza + ${eur(pos)} incassati</div>`;
     }
-    document.getElementById("saveBtn").disabled = !(posEntered && tot>0 && env>=0);
+    document.getElementById("saveBtn").disabled = !(posEntered && tot>0);
+    if (env < 0) { document.getElementById("sumEnv").textContent = eur(0); document.getElementById("envAmt").textContent = eur(0); }
     return {tot,pos,env,diff};
   }
   app.oninput = recalc;

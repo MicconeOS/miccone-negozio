@@ -367,6 +367,8 @@ function briocheRow(x,done,cat){
 // attività che aprono direttamente l'app Cassa (meno passaggi)
 const APRE={'fondo cassa':'morning','conteggio contanti':'closure'};
 function apreCassa(vista,cosa,el){
+  // la chiusura serale si apre solo dalle 21:30 (Beppe, 19/9): prima di allora il conteggio non è quello finale
+  if(vista==='closure'){const d=new Date();if(d.getHours()*60+d.getMinutes()<21*60+30){alert('La chiusura di cassa si fa dalle 21:30 in poi, quando il negozio è chiuso.');return;}}
   salvaSessione();
   try{localStorage.setItem('negozio_ritorno',JSON.stringify({cosa,vista,ts:Date.now()}));}catch(e){}
   // risposta immediata al tocco, così si vede che sta aprendo la Cassa anche se la rete è lenta
