@@ -782,6 +782,11 @@ VIEWS.morning = async function(){
   const expected = st && st.previous_closure ? Number(st.previous_closure.float_target) : Number(S.store.float_target);
   const prevDate = st && st.previous_closure ? st.previous_closure.closure_date : null;
   const already = st && st.morning;
+  // il fondo si conta per tagli, come la sera: più veloce e senza errori di somma (Beppe, 22/9)
+  const mDen = (d, kind) => `<div class="den" data-d="${d}">
+      ${kind==="coin" ? `<div class="face coin ${Number(d)<0.1?"copper":""}">${Number(d)<1 ? Math.round(d*100)+"c" : d+"€"}</div>` : `<div class="face note" style="background:${NOTE_COLORS[d]}">${d} €</div>`}
+      <div class="qty-wrap"><button class="stepper" data-a="-1">−</button><input class="qty" type="number" inputmode="numeric" min="0" value="0"><button class="stepper" data-a="1">+</button></div>
+      <div class="rowtot">—</div></div>`;
 
   app.innerHTML = `<div class="wrap">${topbar()}
     <button class="back" onclick="go('home')">‹ Home</button>
@@ -793,10 +798,10 @@ VIEWS.morning = async function(){
         Dovresti trovare in cassa <b>&nbsp;${eur(expected)}</b>${prevDate?`&nbsp;(lasciati ${weekdayLC(prevDate)} ${dateIT(prevDate)})`:""}
       </div>` : `<div class="hint" style="margin-bottom:12px">Conta con calma tutto il contante che trovi in cassa
         e scrivi la cifra vera. Il confronto lo fa l'amministrazione: tu non devi far tornare nessun numero.</div>`}
-      <div class="field">
-        <label>Quanto hai contato?</label>
-        <div class="money-input"><input id="counted" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"></div>
-      </div>
+      <div class="den-group"><h3>Monete</h3>${COINS.map(d=>mDen(d,"coin")).join("")}</div>
+      <div class="den-group"><h3>Banconote</h3>${NOTES.map(d=>mDen(d,"note")).join("")}</div>
+      <div class="sumrow big"><span class="lbl">Totale contato</span><span class="val" id="mTot">€ 0,00</span></div>
+      <input id="counted" type="hidden" value="">
       <div id="mVerdict"></div>
       <div class="field">
         <label>Note (facoltative)</label>
@@ -808,6 +813,15 @@ VIEWS.morning = async function(){
 
   const inp = document.getElementById("counted");
   function reval(){
+    // somma dei tagli
+    let tot = 0, toccato = false;
+    document.querySelectorAll(".den").forEach(row=>{
+      const q = Math.max(0, parseInt(row.querySelector(".qty").value)||0); if (q) toccato = true;
+      const rt = q * Number(row.dataset.d); tot += rt;
+      row.querySelector(".rowtot").textContent = q ? eur(rt) : "—";
+    });
+    tot = Math.round(tot*100)/100; inp.value = toccato ? tot : "";
+    document.getElementById("mTot").textContent = eur(tot);
     const v = inp.value==="" ? null : Math.round(parseFloat(inp.value)*100)/100;
     const box = document.getElementById("mVerdict");
     if(v===null || isNaN(v)){ box.innerHTML=""; document.getElementById("mSave").disabled=true; return null; }
@@ -819,7 +833,12 @@ VIEWS.morning = async function(){
     document.getElementById("mSave").disabled = false;
     return {v,diff};
   }
-  inp.addEventListener("input", reval);
+  app.oninput = reval;
+  app.onclick = ev=>{
+    const b = ev.target.closest(".stepper"); if(!b) return;
+    const q = b.parentElement.querySelector(".qty");
+    q.value = Math.max(0,(parseInt(q.value)||0) + Number(b.dataset.a)); reval();
+  };
 
   document.getElementById("mSave").onclick = async ()=>{
     const r = reval(); if(!r) return;
