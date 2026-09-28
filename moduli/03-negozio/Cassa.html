@@ -1085,11 +1085,16 @@ function admRender(){
   }
   if (ADM.tab==="versamenti"){
     const deps=(ADM.data&&ADM.data.deposits)||[];
-    if(!deps.length) return `<div class="card"><p class="hint">Nessun versamento nel periodo selezionato.</p></div>`;
-    return `<div class="card"><h2>Versamenti in banca</h2>
+    // regola lunedì/venerdì in vigore dal 28/9/2026 (Beppe): prima i versamenti sono stati fatti senza regola
+    const REGOLA_DAL = "2026-09-28";
+    const regola = `<div class="verdict warn" style="margin:0 0 12px"><span class="big">🏦</span> <span>Le buste si versano il <b>lunedì</b> e il <b>venerdì</b>, dal 28/09/2026. I versamenti precedenti sono stati fatti senza questa regola e sono registrati tutti insieme al 27/09.</span></div>`;
+    const etichetta = d => { if (d.deposit_date < REGOLA_DAL) return `<span class="chip todo">prima della regola</span>`;
+      const g = new Date(d.deposit_date+"T12:00:00").getDay(); return (g===1||g===5) ? `<span class="chip ok">in regola</span>` : `<span class="chip warn">fuori giorno</span>`; };
+    if(!deps.length) return `<div class="card">${regola}<p class="hint">Nessun versamento nel periodo selezionato.</p></div>`;
+    return `<div class="card"><h2>Versamenti in banca</h2>${regola}
     <div class="tbl-scroll"><table>
-      <tr><th>Data</th><th>Negozio</th><th>Chi</th><th class="num">Importo</th><th>Buste versate</th><th>Note</th><th></th></tr>
-      ${deps.map(d=>`<tr><td>${dateIT(d.deposit_date)}</td><td>${esc(d.store_name)}</td><td>${esc(d.employee_name)}</td>
+      <tr><th>Data</th><th>Regola</th><th>Negozio</th><th>Chi</th><th class="num">Importo</th><th>Buste versate</th><th>Note</th><th></th></tr>
+      ${deps.map(d=>`<tr><td>${dateIT(d.deposit_date)}</td><td>${etichetta(d)}</td><td>${esc(d.store_name)}</td><td>${esc(d.employee_name)}</td>
         <td class="num"><b>${eur(d.total_amount)}</b></td>
         <td style="white-space:normal;max-width:340px">${(d.envelopes||[]).map(e=>`<span class="day-badge" title="${dateIT(e.closure_date)}">${weekdayOf(e.closure_date)} ${dateIT(e.closure_date).slice(0,5)} · ${eur(e.envelope_amount)}</span>`).join(" ")}</td>
         <td style="white-space:normal;max-width:200px">${esc(d.notes||"")}</td>

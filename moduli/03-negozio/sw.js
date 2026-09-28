@@ -1,7 +1,7 @@
 // Service worker dell'app Negozio: tiene sull'iPad pagina, font e logo.
 // L'app si apre subito anche con rete lenta; i file si rinfrescano in sottofondo (stale-while-revalidate).
 // Le chiamate a Supabase non passano mai dalla cache.
-const VERSIONE = 'negozio-2026-09-28a';
+const VERSIONE = 'negozio-2026-09-28b';
 const SHELL = [
   './Negozio-v2.html',
   './Cassa.html',
