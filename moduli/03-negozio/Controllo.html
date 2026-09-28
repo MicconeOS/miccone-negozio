@@ -207,7 +207,14 @@ function cassaCard(sede){
       <div class="busta"><span>In busta trovi${c.busta_n ? ' · n. ' + sicuro(c.busta_n) : ''}</span><b>${eur(c.busta)}</b></div>
       <div><span>Fondo lasciato</span><b>${eur(c.attesi)}</b></div>
     </div>` : '';
-  return `<div class="cassa">${rigaM}${rigaC}${grandi}${tagli}</div>`;
+  // riconteggi (Beppe 28/9): ogni conteggio resta registrato, se sono più di uno si vedono tutti
+  const ricont = (x, icona, nome) => {
+    const k = (x && x.conteggi) || [];
+    if (k.length < 2) return '';
+    const passi = k.map(t => `${t.n}° ${eur(t.totale)}${t.incasso != null ? ' (incasso ' + eur(t.incasso) + ')' : ''} · ${sicuro(t.chi||'—')} ${oraIT(t.ora)}`).join(' → ');
+    return `<div class="cr ko"><span class="ci">🔁</span><div><b>${nome}: ricontato ${k.length} volte</b><small>${passi}</small></div></div>`;
+  };
+  return `<div class="cassa">${rigaM}${ricont(m,'🌅','Fondo del mattino')}${rigaC}${ricont(c,'🌙','Chiusura')}${grandi}${tagli}</div>`;
 }
 function disegna(){
   const s = sessione(); if (!s) return mostraGate();

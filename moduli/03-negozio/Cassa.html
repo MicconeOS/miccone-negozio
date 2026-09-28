@@ -313,7 +313,10 @@ const ERRORS = {
   "NESSUNA_BUSTA_SELEZIONATA":"Nessuna busta selezionata.",
   "PIN_NON_VALIDO":"Il PIN deve essere di 4–8 cifre.",
   "BUSTA_GIA_VERSATA":"Questa chiusura è già inclusa in un versamento: elimina prima il versamento.",
-  "NON_TROVATO":"Elemento non trovato."
+  "NON_TROVATO":"Elemento non trovato.",
+  "CHIUSURA_GIA_REGISTRATA":"La chiusura di oggi è già registrata. Per correggerla chiama il responsabile.",
+  "FONDO_GIA_CONFERMATO":"Il fondo di oggi è già confermato. Per correggerlo chiama il responsabile.",
+  "RICONTEGGIO_GIA_FATTO":"Il riconteggio è già stato fatto. Per correggere chiama il responsabile."
 };
 
 /* ================= STATE ================= */
@@ -549,10 +552,10 @@ VIEWS.home = async function(){
   const isAdmin = S.employee.role === "admin";
   // la quadratura la vedono tutti i dipendenti (Beppe, 16/9: "non solo l'amministrazione")
   document.getElementById("chips").innerHTML = true ? `
-    <span class="chip ${morningDone ? (Math.abs(Number(st.morning.difference))<0.005?"ok":"bad") : "todo"}">
-      ${morningDone ? (Math.abs(Number(st.morning.difference))<0.005 ? "✓ Fondo confermato" : "⚠ Fondo con differenza "+eur(st.morning.difference)) : "○ Fondo da confermare"}</span>
-    <span class="chip ${closureDone ? (Math.abs(Number(st.closure.difference))<0.005?"ok":"bad") : "todo"}" style="margin-left:6px">
-      ${closureDone ? (Math.abs(Number(st.closure.difference))<0.005 ? "✓ Chiusura quadrata" : "⚠ Chiusura: "+eur(st.closure.difference)) : "○ Chiusura da fare"}</span>` : `
+    <span class="chip ${morningDone ? (Math.abs(diffVisibile(st.morning.difference))<0.005?"ok":"bad") : "todo"}">
+      ${morningDone ? (Math.abs(diffVisibile(st.morning.difference))<0.005 ? "✓ Fondo confermato" : (protetto() && daRicontare(st.morning) ? "⚠ Fondo da ricontare" : "⚠ Fondo con differenza "+eur(diffVisibile(st.morning.difference)))) : "○ Fondo da confermare"}</span>
+    <span class="chip ${closureDone ? (Math.abs(diffVisibile(st.closure.difference))<0.005?"ok":"bad") : "todo"}" style="margin-left:6px">
+      ${closureDone ? (Math.abs(diffVisibile(st.closure.difference))<0.005 ? "✓ Chiusura quadrata" : (protetto() && daRicontare(st.closure) ? "⚠ Chiusura da ricontare" : "⚠ Chiusura: "+eur(diffVisibile(st.closure.difference)))) : "○ Chiusura da fare"}</span>` : `
     <span class="chip ${morningDone?"ok":"todo"}">${morningDone ? "✓ Fondo contato" : "○ Fondo da contare"}</span>
     <span class="chip ${closureDone?"ok":"todo"}" style="margin-left:6px">${closureDone ? "✓ Chiusura fatta" : "○ Chiusura da fare"}</span>`;
 
@@ -586,6 +589,52 @@ VIEWS.home = async function(){
     </button>` : ""}`;
 };
 
+/* Eccedenza e ammanco (Beppe, 28/9): l'ammanco lo vedono tutti, l'eccedenza solo l'amministrazione.
+   Per il dipendente un'eccedenza appare come cassa a posto: i soldi in più finiscono comunque in busta. */
+function vedeEccedenza(){ return !!(S.employee && S.employee.role === "admin"); }
+function diffVisibile(d){ d = Number(d)||0; return (!vedeEccedenza() && d > 0) ? 0 : d; }
+/* Conteggio protetto (Beppe, 28/9): il dipendente vede il risultato solo dopo aver registrato,
+   può ricontare una volta sola e solo se manca del contante; ogni conteggio resta nel registro.
+   Si accende per negozio dal server (stores.conteggio_protetto); il responsabile lavora come prima. */
+function protetto(){ return !!(S.status && S.status.protetto) && !vedeEccedenza(); }
+function daRicontare(r){ return !!r && Number(r.difference) < 0 && Number(r.tentativi||1) < 2; }
+function bloccato(r){ return !!r && (Number(r.difference) >= 0 || Number(r.tentativi||1) >= 2); }
+function schermataBloccata(titolo, testo){
+  app.innerHTML = `<div class="wrap">${topbar()}
+    <button class="back" onclick="go('home')">‹ Home</button>
+    <div class="card center"><div style="font-size:52px;margin:8px 0">🔒</div><h2>${titolo}</h2>
+    <div class="sub" style="margin:10px 0 16px">${testo}</div>
+    <button class="btn btn-primary" onclick="if(!tornaInNegozio())go('home')">${sessioneAperta()&&localStorage.getItem('negozio_ritorno')?'Torna al Negozio':'Torna alla home'}</button></div></div>`;
+}
+// schermata dopo il primo conteggio con ammanco: niente cifra, un solo riconteggio
+function schermataRiconta(tipo, rifai){
+  app.innerHTML = `<div class="wrap">${topbar()}
+    <div class="card center">
+      <div style="font-size:52px;margin:8px 0">🔁</div>
+      <h2>${tipo==='sera'?'La cassa non torna':'Il fondo non torna'}</h2>
+      <div class="sub" style="margin:10px 0 6px">Manca del contante rispetto a quello che doveva esserci.</div>
+      <div class="verdict warn" style="text-align:left"><span class="big">🧮</span> <span>Ricontate tutto con calma: monete, banconote${tipo==='sera'?' e l\'incasso contanti sullo scontrino di chiusura':''}. Hai <b>un solo riconteggio</b>.</span></div>
+      <button class="btn btn-primary" id="btnRiconta" style="margin-top:14px">Riconta adesso</button>
+      <button class="btn" id="btnCosi" style="margin-top:10px">Ho già ricontato: registra così</button>
+      <p class="hint center mt">Il primo conteggio resta registrato e lo vede il responsabile.</p>
+    </div></div>`;
+  document.getElementById("btnRiconta").onclick = () => go(tipo==='sera'?'closure':'morning');
+  document.getElementById("btnCosi").onclick = async (ev) => { ev.target.disabled = true; ev.target.textContent = "Salvo…"; try { await rifai(); } catch(e) { toast(e.message, true); ev.target.disabled = false; ev.target.textContent = "Ho già ricontato: registra così"; } };
+}
+// campo nota dopo il conteggio definitivo con ammanco
+function bloccoNota(tipo, data){
+  return `<div class="field" style="text-align:left;margin-top:12px"><label>Scrivi cosa è successo (lo legge il responsabile)</label>
+    <textarea id="notaDopo" rows="2" placeholder="Es. resto sbagliato a un cliente, scontrino annullato…"></textarea></div>
+    <button class="btn" id="btnNota" onclick="salvaNota('${tipo}','${data}')">Salva la nota</button>`;
+}
+async function salvaNota(tipo, data){
+  const t = (document.getElementById("notaDopo")||{}).value || "";
+  if (!t.trim()) { toast("Scrivi prima la nota.", true); return; }
+  try { await rpc("cassa_nota_conteggio",{p_employee:S.employee.id,p_pin:S.pin,p_store:S.store.id,p_date:data,p_tipo:tipo,p_nota:t.trim()});
+        toast("Nota salvata ✓"); const b=document.getElementById("btnNota"); if(b){b.disabled=true;b.textContent="Nota salvata ✓";} }
+  catch(e){ toast(e.message, true); }
+}
+
 /* ================= VIEW: evening closure ================= */
 VIEWS.closure = function(){
   fondoOggi().then(f => {
@@ -597,8 +646,11 @@ VIEWS.closure = function(){
   { const d = new Date(); if (d.getHours()*60 + d.getMinutes() < 21*60 + 30 && S.employee.role !== "admin") { toast("La chiusura di cassa si fa dalle 21:30 in poi.", true); return go("home"); } }
   const today = todayISO();
   const prev = (S.status && S.status.closure) || null;
+  if (protetto() && bloccato(prev)) return schermataBloccata("Chiusura già registrata", "La chiusura di oggi è già stata fatta. Se c'è da correggere qualcosa chiama il responsabile.");
   const counts = {};
-  [...COINS,...NOTES].forEach(d=> counts[d] = prev && prev.counts && prev.counts[d] ? Number(prev.counts[d]) : 0);
+  // al riconteggio si riparte dai numeri del primo conteggio, così si corregge solo quello che non va
+  const ultimi = (S.ultimoConteggio && S.ultimoConteggio.giorno === today) ? S.ultimoConteggio : null;
+  [...COINS,...NOTES].forEach(d=> counts[d] = ultimi && ultimi.counts[d] ? Number(ultimi.counts[d]) : (prev && prev.counts && prev.counts[d] ? Number(prev.counts[d]) : 0));
   // If editing an existing closure we don't have counts in status (stripped) — start fresh.
 
   function denRow(d, kind){
@@ -621,7 +673,7 @@ VIEWS.closure = function(){
     <div class="card">
       <h2>🌙 Chiusura serale</h2>
       <div class="sub">${weekdayLC(today).replace(/^./,c=>c.toUpperCase())} ${dateIT(today)} · ${esc(S.store.name)}
-      ${prev ? `<br><b style="color:var(--amber)">Attenzione: la chiusura di oggi è già stata registrata. Salvando la sostituisci.</b>`:""}</div>
+      <span id="giaReg">${prev ? (protetto() ? `<br><b style="color:var(--amber)">Riconteggio: è l'unico che hai, conta con calma.</b>` : `<br><b style="color:var(--amber)">Attenzione: la chiusura di oggi è già stata registrata. Salvando la sostituisci.</b>`):""}</span></div>
       <div class="den-group"><h3>Monete</h3>${COINS.map(d=>denRow(d,"coin")).join("")}</div>
       <div class="den-group"><h3>Banconote</h3>${NOTES.map(d=>denRow(d,"note")).join("")}</div>
     </div>
@@ -629,7 +681,7 @@ VIEWS.closure = function(){
       <h2>Cassa</h2>
       ${true ? `<div class="field">
         <label>Incasso in contanti dallo scontrino di chiusura del registratore</label>
-        <div class="money-input"><input id="posTotal" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00"></div>
+        <div class="money-input"><input id="posTotal" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0,00" value="${ultimi && ultimi.pos != null ? ultimi.pos : ''}"></div>
         <div class="hint" style="margin-top:6px">È il totale "contanti" stampato dal registratore di cassa, <b>non</b> quello che hai contato nel cassetto: il conteggio l'hai già fatto qui sopra.</div>
       </div>` : `<input id="posTotal" type="hidden" value="">
       <div class="field"><label>Conteggio in autonomia</label>
@@ -645,7 +697,7 @@ VIEWS.closure = function(){
       <div class="sumrow big"><span class="lbl">Totale contato</span><span class="val" id="sumTot">€ 0,00</span></div>
       <div class="sumrow"><span class="lbl">Fondo cassa da lasciare oggi</span><span class="val" id="fondoOggi">${eur(FONDO_OGGI ?? S.store.float_target)}</span></div>
       <div class="sumrow"><span class="lbl">Da mettere in busta</span><span class="val" id="sumEnv">€ 0,00</span></div>
-      ${true ? `<div class="sumrow"><span class="lbl">Fondo di partenza stamattina</span><span class="val" id="fondoStart">—</span></div>
+      ${true ? `<div class="sumrow" style="${vedeEccedenza()?"":"display:none"}"><span class="lbl">Fondo di partenza stamattina</span><span class="val" id="fondoStart">—</span></div>
       <div class="sumrow"><span class="lbl">Contanti battuti in cassa</span><span class="val" id="sumPos">€ 0,00</span></div>
       <div id="verdict"></div>` : `<span id="fondoStart" style="display:none"></span><span id="sumPos" style="display:none"></span><span id="verdict" style="display:none"></span>`}
       <div class="envelope">
@@ -665,6 +717,7 @@ VIEWS.closure = function(){
   // la quadratura è contato = partenza + contanti incassati. La busta invece è contato - fondo da lasciare.
   const floatStart = () => Number((S.status && S.status.float_start != null) ? S.status.float_start : (S.status && S.status.morning ? S.status.morning.float_counted : (S.status && S.status.previous_closure ? S.status.previous_closure.float_target : S.store.float_target)));
   (async () => { if (!S.status || S.status.float_start == null) { try { S.status = await rpc("cassa_status",{p_employee:S.employee.id,p_pin:S.pin,p_store:S.store.id,p_date:today}); } catch(e) {} }
+    if (protetto() && bloccato(S.status && S.status.closure)) return schermataBloccata("Chiusura già registrata", "La chiusura di oggi è già stata fatta. Se c'è da correggere qualcosa chiama il responsabile.");
     const el = document.getElementById("fondoStart"); if (el) el.textContent = eur(floatStart()); if (typeof recalc === "function") recalc(); })();
   function recalc(){
     if (!document.querySelector(".den")) return {};
@@ -692,14 +745,20 @@ VIEWS.closure = function(){
       v.innerHTML = `<div class="verdict warn"><span class="big">🧮</span> Conta il contante e inserisci l'incasso di cassa</div>`;
     } else if (env < 0){
       // meno contante del fondo previsto: si lascia tutto in cassa e la busta è vuota (il server fa lo stesso)
-      v.innerHTML = `<div class="verdict warn"><span class="big">ℹ️</span> Il contante (${eur(tot)}) è meno del fondo previsto (${eur(floatT())}): lascia tutto in cassa, stasera la busta è vuota.</div>`;
+      v.innerHTML = `<div class="verdict warn"><span class="big">ℹ️</span> Il contante (${eur(tot)}) è meno del fondo previsto (${eur(floatT())}): lascia tutto in cassa, stasera la busta è vuota.</div>`+
+        (diff <= -0.005 && !protetto() ? `<div class="verdict bad"><span class="big">⚠</span> Ammanco di ${eur(Math.abs(diff))}: dovevi trovare ${eur(Math.round((floatStart()+pos)*100)/100)}, cioè ${eur(floatStart())} di partenza + ${eur(pos)} incassati</div>` : ``);
     } else if (floatStart() > 10 && Math.abs(pos - tot) < 3){
       // errore classico: nel campo incasso viene scritto il contato del cassetto (fondo compreso) invece dello scontrino del registratore
       v.innerHTML = `<div class="verdict bad"><span class="big">⚠</span> L'incasso inserito (${eur(pos)}) è uguale a quello che hai contato: sembra il totale del cassetto, non lo scontrino. Nel cassetto c'è anche il fondo di partenza (${eur(floatStart())}). Controlla il totale contanti sullo scontrino di chiusura del registratore.</div>`;
+    } else if (protetto()){
+      v.innerHTML = `<div class="verdict warn"><span class="big">🧾</span> <span>Quando hai finito premi <b>Registra chiusura</b>: il risultato lo vedi subito dopo.</span></div>`;
+    } else if (!vedeEccedenza() && diff > -0.005){
+      // dipendente: quadrata o eccedenza si vedono uguali, senza conti
+      v.innerHTML = `<div class="verdict ok"><span class="big">✓</span> Cassa a posto</div>`;
     } else if (Math.abs(diff) < 0.005){
       v.innerHTML = `<div class="verdict ok"><span class="big">✓</span> Cassa quadrata: ${eur(floatStart())} di partenza + ${eur(pos)} incassati = ${eur(tot)}</div>`;
     } else {
-      v.innerHTML = `<div class="verdict bad"><span class="big">⚠</span> Differenza di ${eur(diff)} (${diff>0?"eccedenza":"ammanco"}): dovevi trovare ${eur(Math.round((floatStart()+pos)*100)/100)}, cioè ${eur(floatStart())} di partenza + ${eur(pos)} incassati</div>`;
+      v.innerHTML = `<div class="verdict bad"><span class="big">⚠</span> ${diff>0?"Eccedenza":"Ammanco"} di ${eur(Math.abs(diff))}: dovevi trovare ${eur(Math.round((floatStart()+pos)*100)/100)}, cioè ${eur(floatStart())} di partenza + ${eur(pos)} incassati</div>`;
     }
     document.getElementById("saveBtn").disabled = !(posEntered && tot>0);
     if (env < 0) { document.getElementById("sumEnv").textContent = eur(0); document.getElementById("envAmt").textContent = eur(0); }
@@ -720,16 +779,25 @@ VIEWS.closure = function(){
 
   document.getElementById("saveBtn").onclick = async ()=>{
     const {tot,pos,env,diff} = recalc();
-    if (Math.abs(diff)>=0.005 && !document.getElementById("notes").value.trim()){
+    if (!protetto() && Math.abs(diffVisibile(diff))>=0.005 && !document.getElementById("notes").value.trim()){
       if(!confirm(`C'è una differenza di ${eur(diff)}. Vuoi registrare comunque senza aggiungere una nota?`)) return;
     }
     const btn = document.getElementById("saveBtn");
     btn.disabled = true; btn.textContent = "Salvo…";
     try{
-      const row = await rpc("cassa_submit_closure",{
-        p_employee:S.employee.id, p_pin:S.pin, p_store:S.store.id, p_date:today,
-        p_counts:counts, p_pos_total:pos, p_notes:document.getElementById("notes").value.trim()||null
-      });
+      const invio = {p_employee:S.employee.id, p_pin:S.pin, p_store:S.store.id, p_date:today,
+        p_counts:Object.assign({},counts), p_pos_total:pos, p_notes:document.getElementById("notes").value.trim()||null};
+      const row = await rpc("cassa_submit_closure", invio);
+      S.ultimoConteggio = {giorno:today, counts:invio.p_counts, pos};
+      if (S.status) S.status.closure = row;
+      if (row.protetto && !vedeEccedenza() && row.finale === false){
+        // primo conteggio con ammanco: nessuna cifra, un solo riconteggio
+        return schermataRiconta('sera', async () => {
+          const r2 = await rpc("cassa_submit_closure", Object.assign({}, invio, {p_notes:null}));
+          if (S.status) S.status.closure = r2; S.ultimoConteggio = null; VIEWS.closureDone(r2);
+        });
+      }
+      S.ultimoConteggio = null;
       VIEWS.closureDone(row);
     }catch(e){
       toast(e.message, true);
@@ -739,15 +807,15 @@ VIEWS.closure = function(){
 };
 
 VIEWS.closureDone = function(row){
-  const ok = Math.abs(Number(row.difference))<0.005;
+  const ok = Math.abs(diffVisibile(row.difference))<0.005;
   // busta numerata: il numero e' progressivo per negozio, i salti si vedono
   (async () => {
     try {
       const n = await rpc("cassa_numera_busta", {p_closure: row.id});
       const el = document.getElementById("nBusta");
-      if (el) el.textContent = "n. " + n;
+      if (el && n != null) el.textContent = "n. " + n;
       const scritta = document.getElementById("bustaScritta");
-      if (scritta) scritta.textContent = "Scrivi sulla busta: n. " + n;
+      if (scritta && n != null) scritta.textContent = "Scrivi sulla busta: n. " + n;
     } catch(e) {}
   })();
   app.innerHTML = `<div class="wrap">${topbar()}
@@ -756,9 +824,10 @@ VIEWS.closureDone = function(row){
       <h2>Chiusura registrata</h2>
       <div class="sub">${weekdayLC(row.closure_date).replace(/^./,c=>c.toUpperCase())} ${dateIT(row.closure_date)} · ${esc(S.store.name)}</div>
       <div class="sumrow"><span class="lbl">Totale contato</span><span class="val">${eur(row.total_counted)}</span></div>
-      ${true ? `<div class="sumrow"><span class="lbl">Fondo di partenza</span><span class="val">${eur(row.float_start)}</span></div>
+      ${true ? `${vedeEccedenza()?`<div class="sumrow"><span class="lbl">Fondo di partenza</span><span class="val">${eur(row.float_start)}</span></div>`:""}
       <div class="sumrow"><span class="lbl">Contanti battuti in cassa</span><span class="val">${eur(row.pos_cash_total)}</span></div>
-      <div class="sumrow"><span class="lbl">Quadratura</span><span class="val" style="color:${ok?"var(--green)":"var(--red)"}">${ok?"OK":eur(row.difference)}</span></div>` : ``}
+      <div class="sumrow"><span class="lbl">Quadratura</span><span class="val" style="color:${ok?"var(--green)":"var(--red)"}">${ok?"OK":eur(diffVisibile(row.difference))}</span></div>` : ``}
+      ${!ok && row.protetto && !vedeEccedenza() ? `<div class="verdict bad" style="text-align:left"><span class="big">⚠</span> Ammanco di ${eur(Math.abs(Number(row.difference)))} dopo il riconteggio. Il responsabile lo vede nel Controllo.</div>${bloccoNota('sera', row.closure_date)}` : ``}
       <div class="sumrow"><span class="lbl">Numero della busta</span><span class="val" id="nBusta">—</span></div>
       <div class="envelope">
         <div class="cap">Ora fai così</div>
@@ -782,6 +851,7 @@ VIEWS.morning = async function(){
   const expected = st && st.previous_closure ? Number(st.previous_closure.float_target) : Number(S.store.float_target);
   const prevDate = st && st.previous_closure ? st.previous_closure.closure_date : null;
   const already = st && st.morning;
+  if (protetto() && bloccato(already)) return schermataBloccata("Fondo già confermato", "Il fondo di oggi è già stato contato. Se c'è da correggere qualcosa chiama il responsabile.");
   // il fondo si conta per tagli, come la sera: più veloce e senza errori di somma (Beppe, 22/9)
   const mDen = (d, kind) => `<div class="den" data-d="${d}">
       ${kind==="coin" ? `<div class="face coin ${Number(d)<0.1?"copper":""}">${Number(d)<1 ? Math.round(d*100)+"c" : d+"€"}</div>` : `<div class="face note" style="background:${NOTE_COLORS[d]}">${d} €</div>`}
@@ -793,10 +863,11 @@ VIEWS.morning = async function(){
     <div class="card">
       <h2>☀️ Conta fondo cassa</h2>
       <div class="sub">${weekdayLC(today).replace(/^./,c=>c.toUpperCase())} ${dateIT(today)} · ${esc(S.store.name)}
-      ${already?`<br><b style="color:var(--amber)">Il fondo di oggi è già stato confermato (${eur(already.float_counted)}). Salvando lo aggiorni.</b>`:""}</div>
-      ${ADMIN ? `<div class="verdict warn" style="margin-top:0"><span class="big">💶</span>
+      ${already?(protetto()?`<br><b style="color:var(--amber)">Riconteggio: è l'unico che hai, conta con calma.</b>`:`<br><b style="color:var(--amber)">Il fondo di oggi è già stato confermato (${eur(already.float_counted)}). Salvando lo aggiorni.</b>`):""}</div>
+      ${ADMIN ? (vedeEccedenza() ? `<div class="verdict warn" style="margin-top:0"><span class="big">💶</span>
         Dovresti trovare in cassa <b>&nbsp;${eur(expected)}</b>${prevDate?`&nbsp;(lasciati ${weekdayLC(prevDate)} ${dateIT(prevDate)})`:""}
-      </div>` : `<div class="hint" style="margin-bottom:12px">Conta con calma tutto il contante che trovi in cassa
+      </div>` : `<div class="verdict warn" style="margin-top:0"><span class="big">💶</span>
+        ${protetto()?'Conta tutto il contante che trovi in cassa, poi premi Conferma: ti diciamo subito se torna.':'Conta tutto il contante che trovi in cassa: appena finisci ti diciamo se torna.'}</div>`) : `<div class="hint" style="margin-bottom:12px">Conta con calma tutto il contante che trovi in cassa
         e scrivi la cifra vera. Il confronto lo fa l'amministrazione: tu non devi far tornare nessun numero.</div>`}
       <div class="den-group"><h3>Monete</h3>${COINS.map(d=>mDen(d,"coin")).join("")}</div>
       <div class="den-group"><h3>Banconote</h3>${NOTES.map(d=>mDen(d,"note")).join("")}</div>
@@ -827,9 +898,10 @@ VIEWS.morning = async function(){
     if(v===null || isNaN(v)){ box.innerHTML=""; document.getElementById("mSave").disabled=true; return null; }
     const diff = Math.round((v-expected)*100)/100;
     // conteggio cieco: solo l'amministrazione vede il confronto col previsto
-    if (ADMIN) box.innerHTML = Math.abs(diff)<0.005
+    if (protetto()) box.innerHTML = "";
+    else if (ADMIN) box.innerHTML = Math.abs(diffVisibile(diff))<0.005
       ? `<div class="verdict ok"><span class="big">✓</span> Il fondo corrisponde</div>`
-      : `<div class="verdict bad"><span class="big">⚠</span> Differenza di ${eur(diff)} rispetto al previsto</div>`;
+      : `<div class="verdict bad"><span class="big">⚠</span> ${diff>0?"Eccedenza":"Ammanco"} di ${eur(Math.abs(diff))} rispetto al previsto</div>`;
     document.getElementById("mSave").disabled = false;
     return {v,diff};
   }
@@ -843,14 +915,30 @@ VIEWS.morning = async function(){
   document.getElementById("mSave").onclick = async ()=>{
     const r = reval(); if(!r) return;
     const notes = document.getElementById("mNotes").value.trim();
-    if (ADMIN && Math.abs(r.diff)>=0.005 && !notes){ toast("Il fondo non corrisponde: scrivi una nota per l'amministrazione.", true); return; }
+    if (!protetto() && ADMIN && Math.abs(diffVisibile(r.diff))>=0.005 && !notes){ toast("Il fondo non corrisponde: scrivi una nota per l'amministrazione.", true); return; }
     const btn = document.getElementById("mSave"); btn.disabled=true; btn.textContent="Salvo…";
     try{
-      await rpc("cassa_submit_morning",{
-        p_employee:S.employee.id,p_pin:S.pin,p_store:S.store.id,p_date:today,
-        p_float_counted:r.v, p_notes:notes||null
-      });
-      toast(Math.abs(r.diff)<0.005 ? "Fondo cassa confermato ✓" : "Registrato con differenza: l'amministrazione lo vedrà.");
+      const invio = {p_employee:S.employee.id,p_pin:S.pin,p_store:S.store.id,p_date:today, p_float_counted:r.v, p_notes:notes||null};
+      const row = await rpc("cassa_submit_morning", invio);
+      if (S.status) S.status.morning = row;
+      if (row.protetto && !vedeEccedenza()){
+        const fine = (rr) => {
+          if (rr.esito === 'ok'){ toast("Fondo cassa confermato ✓"); if(tornaInNegozio()) return; return go("home"); }
+          // ammanco definitivo dopo il riconteggio: si vede la cifra e si lascia una nota
+          app.innerHTML = `<div class="wrap">${topbar()}<div class="card center">
+            <div style="font-size:52px;margin:8px 0">⚠️</div><h2>Fondo registrato con ammanco</h2>
+            <div class="verdict bad" style="text-align:left"><span class="big">⚠</span> Mancano ${eur(Math.abs(Number(rr.difference)))} nel fondo. Il responsabile lo vede nel Controllo.</div>
+            ${bloccoNota('mattina', rr.check_date)}
+            <button class="btn btn-primary" style="margin-top:12px" onclick="if(!tornaInNegozio())go('home')">${sessioneAperta()&&localStorage.getItem('negozio_ritorno')?'Torna al Negozio':'Torna alla home'}</button>
+          </div></div>`;
+        };
+        if (row.finale === false) return schermataRiconta('mattina', async () => {
+          const r2 = await rpc("cassa_submit_morning", Object.assign({}, invio, {p_notes:null}));
+          if (S.status) S.status.morning = r2; fine(r2);
+        });
+        return fine(row);
+      }
+      toast(Math.abs(diffVisibile(r.diff))<0.005 ? "Fondo cassa confermato ✓" : "Registrato con differenza: l'amministrazione lo vedrà.");
       if(tornaInNegozio()) return;
       go("home");
     }catch(e){ toast(e.message,true); btn.disabled=false; btn.textContent="Conferma fondo cassa"; }

@@ -395,17 +395,21 @@ function stepsRow(x,done,cat){
     ${x.foto_url?`<img src="${x.foto_url}" style="width:100%;border-radius:14px;margin-top:10px">`:''}
     ${ricettaHtml(x)}</div>`;
 }
-// Ricetta agganciata a una task: tasto "📖 Ricetta" che apre ingredienti e procedimento
+// Ricette agganciate a una task: un tasto "📖 Ricetta" per ciascuna, apre ingredienti e procedimento.
+// x.ricetta può essere una ricetta sola {titolo,ingredienti,passi} o un elenco [{...},{...}] (Beppe, 28/9: torta + brownie)
 function ricettaHtml(x){
   if(!x.ricetta)return '';
-  const r=typeof x.ricetta==='string'?JSON.parse(x.ricetta):x.ricetta;
-  const aperta=!!(S.ricette&&S.ricette.has(x.id));
-  return `<button class="ricbtn" onclick="event.stopPropagation();toggleRicetta('${x.id}')">📖 ${aperta?'Chiudi la ricetta':'Ricetta: '+(r.titolo||'')}</button>`+
+  let r=typeof x.ricetta==='string'?JSON.parse(x.ricetta):x.ricetta;
+  const lista=Array.isArray(r)?r:[r];
+  return lista.map((r,i)=>{
+    const k=x.id+':'+i, aperta=!!(S.ricette&&S.ricette.has(k));
+    return `<button class="ricbtn" onclick="event.stopPropagation();toggleRicetta('${k}')">📖 ${aperta?'Chiudi: '+(r.titolo||''):'Ricetta: '+(r.titolo||'')}</button>`+
     (aperta?`<div class="ricetta"><div class="rt">${r.titolo||''}</div>
       ${(r.ingredienti||[]).length?`<div class="rh">Ingredienti</div><ul>${r.ingredienti.map(i=>`<li>${i}</li>`).join('')}</ul>`:''}
       ${(r.passi||[]).length?`<div class="rh">Procedimento</div><ol>${r.passi.map(p=>`<li>${p}</li>`).join('')}</ol>`:''}</div>`:'');
+  }).join('');
 }
-function toggleRicetta(id){S.ricette=S.ricette||new Set();if(S.ricette.has(id))S.ricette.delete(id);else S.ricette.add(id);render();}
+function toggleRicetta(k){S.ricette=S.ricette||new Set();if(S.ricette.has(k))S.ricette.delete(k);else S.ricette.add(k);render();}
 function esciTurno(){try{localStorage.removeItem('miccone_sessione');}catch(e){}S={store:S.store,emp:null,pin:'',giornata:null,momento:null};schermataLogin();}
 function vaiA(m){S.momento=m;salvaSessione();render();}
 // La spunta si salva sul giorno che stai guardando (S.data) e si resta su quel giorno.
